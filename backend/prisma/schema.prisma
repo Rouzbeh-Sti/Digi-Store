@@ -1,15 +1,122 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Enums definition
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// User Service Model
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  role      Role      @default(BUYER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  products  Product[] 
+  orders    Order[]   
+  reviews   Review[]
+}
+
+// Product Service Model
+model Product {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  sellerId    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  seller      User        @relation(fields: [sellerId], references: [id])
+  orderItems  OrderItem[]
+  licenses    License[]
+  reviews     Review[]
+}
+
+// Order Service Models
+model Order {
+  id            Int           @id @default(autoincrement())
+  buyerId       Int
+  totalAmount   Float
+  status        OrderStatus   @default(PENDING)
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  buyer         User          @relation(fields: [buyerId], references: [id])
+  items         OrderItem[]
+  transaction   Transaction?
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  price     Float
+
+  // Relations
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  license   License?
+}
+
+// License Service Model (Secure File Access)
+model License {
+  id          Int       @id @default(autoincrement())
+  licenseKey  String    @unique
+  productId   Int
+  orderItemId Int       @unique
+  isValid     Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  product     Product   @relation(fields: [productId], references: [id])
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+}
+
+// Payment Service Model
+model Transaction {
+  id            Int       @id @default(autoincrement())
+  orderId       Int       @unique
+  amount        Float
+  paymentMethod String
+  status        String
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  order         Order     @relation(fields: [orderId], references: [id])
+}
+
+// Review Service Model
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
