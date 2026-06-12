@@ -2,18 +2,24 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+// 1. Import route files
+const authRouter = require('./routes/authRoutes');
+
 const app = express();
 
-// میان‌افزارها (Middlewares)
-app.use(cors()); // اجازه میده فرانت‌اند به این سرور وصل بشه
-app.use(express.json()); // برای اینکه سرور بتونه فرمت JSON رو بخونه
+// 2. Middlewares
+app.use(cors()); // Allow frontend to connect to this server
+app.use(express.json()); // Parse incoming JSON payloads
 
-// یک API تستی (متد GET)
+// 3. Register routes
+app.use('/api/auth', authRouter); // Map all /api/auth requests to authRouter
+
+// Test API (GET method)
 app.get('/api/status', (req, res) => {
-    res.json({ message: "سرور بک‌اند با موفقیت متصل شد و آماده کار است! 🚀" });
+    res.json({ message: "Backend server is connected and ready! 🚀" });
 });
 
-// تنظیم پورت
+// 4. Server configuration
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
