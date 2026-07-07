@@ -26,6 +26,7 @@ enum OrderStatus {
 model User {
   id        Int       @id @default(autoincrement())
   email     String    @unique
+  fullName  String   @default("")
   password  String
   role      Role      @default(BUYER)
   createdAt DateTime  @default(now())

@@ -1,31 +1,47 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const registerUser = async (req, res) => {
     try {
-        const { email, password, role } = req.body;
+        const { email, password, fullName, role } = req.body;
+
+        // Check for required inputs according to schema updates
+        if (!email || !password || !fullName) {
+            return res.status(400).json({ message: "لطفاً تمام فیلدها (نام کامل، ایمیل و رمز عبور) را وارد کنید." });
+        }
 
         const existingUser = await prisma.user.findUnique({
             where: { email: email }
         });
 
         if (existingUser) {
-            return res.status(400).json({ error: "User already exists" });
+            return res.status(400).json({ message: "این ایمیل قبلاً در سیستم ثبت شده است." });
         }
+
+        // Secure password hashing with bcrypt using 10 salt rounds
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = await prisma.user.create({
             data: {
                 email: email,
-                password: password,
+                password: hashedPassword,
+                fullName: fullName,
                 role: role || "BUYER"
             }
         });
 
-        res.status(201).json({ message: "User registered successfully", user: newUser });
+        // Exclude the sensitive password field from the final HTTP response
+        const { password: _, ...userWithoutPassword } = newUser;
+
+        res.status(201).json({ 
+            message: "ثبت‌نام شما با موفقیت انجام شد! اکنون می‌توانید وارد شوید.", 
+            user: userWithoutPassword 
+        });
     } catch (error) {
         console.error("Register Error:", error);
-        res.status(500).json({ error: "Server error during registration" });
+        res.status(500).json({ message: "خطایی در سرور هنگام ثبت‌نام رخ داد." });
     }
 };
 
@@ -33,12 +49,23 @@ const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({ message: "وارد کردن ایمیل و رمز عبور الزامی است." });
+        }
+
         const user = await prisma.user.findUnique({
             where: { email: email }
         });
 
-        if (!user || user.password !== password) {
-            return res.status(401).json({ error: "Invalid email or password" });
+        // Consistent error message for security (prevents user enumeration)
+        if (!user) {
+            return res.status(401).json({ message: "ایمیل یا رمز عبور اشتباه است." });
+        }
+
+        // Verify incoming plain password against encrypted hash stored in DB
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: "ایمیل یا رمز عبور اشتباه است." });
         }
 
         const payload = {
@@ -53,17 +80,19 @@ const loginUser = async (req, res) => {
         );
 
         res.status(200).json({
-            message: "Login successful",
+            message: "ورود با موفقیت انجام شد.",
             token: token,
             user: {
+                id: user.id,
                 email: user.email,
+                fullName: user.fullName,
                 role: user.role
             }
         });
 
     } catch (error) {
         console.error("Login Error:", error);
-        res.status(500).json({ error: "Server error during login" });
+        res.status(500).json({ message: "خطایی در سرور هنگام ورود رخ داد." });
     }
 };
 

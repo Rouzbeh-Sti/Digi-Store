@@ -2,18 +2,42 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 
-// Register component to handle new user account creation
 export default function Register() {
-  // State variables for form inputs
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // Function to handle form submission
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    console.log('Registering user with:', { fullName, email, password });
-    // Future step: Send data to Node.js backend here
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fullName, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage(data.message);
+        setFullName('');
+        setEmail('');
+        setPassword('');
+      } else {
+        // Display the exact Persian error message sent by backend
+        setErrorMessage(data.message);
+      }
+    } catch (error) {
+      console.error('Registration network error:', error);
+      setErrorMessage('خطا در اتصال به سرور. مطمئن شوید بک‌اَند روشن است.');
+    }
   };
 
   return (
@@ -22,9 +46,19 @@ export default function Register() {
         <h2 className="text-2xl font-bold mb-2 text-gray-900">ایجاد حساب رایگان</h2>
         <p className="text-gray-500 mb-6 text-sm">همین امروز شروع کنید - بدون کارت بانکی</p>
 
-        <button type="button" className="w-full py-3 px-4 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors mb-5 flex justify-center items-center gap-2">
-          <span>ادامه با Google</span>
-        </button>
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
+            <span>✓</span>
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2">
+            <span>⚠</span>
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         <form onSubmit={handleRegisterSubmit} className="space-y-4">
           <div>
@@ -55,7 +89,7 @@ export default function Register() {
             <label className="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
             <input 
               type="password" 
-              placeholder="حداقل 8 کاراکتر"
+              placeholder="حداقل ۸ کاراکتر"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-sm"
