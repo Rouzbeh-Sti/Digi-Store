@@ -1,1 +1,12 @@
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
 @import "tailwindcss";
+
+@layer base {
+  html, body, #root {
+    font-family: 'Vazirmatn', sans-serif !important;
+    background-color: #f8f8fc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+}
