@@ -26,7 +26,11 @@ app.get('/api/status', (req, res) => {
 });
 
 // 4. Server configuration
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// Only listen to the port if we are NOT running tests
+if (process.env.NODE_ENV !== 'test') {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+// Export the app so Supertest can use it
+module.exports = app;
