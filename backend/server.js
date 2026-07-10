@@ -4,6 +4,7 @@ require('dotenv').config();
 
 // 1. Import route files
 const authRouter = require('./routes/authRoutes');
+const productRouter = require('./routes/productRoutes');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json()); // Parse incoming JSON payloads
 
 // 3. Register routes
 app.use('/api/auth', authRouter); // Map all /api/auth requests to authRouter
+app.use('/api/products', productRouter); // Map all /api/products requests to productRouter
 
 // Test API (GET method)
 app.get('/api/status', (req, res) => {
