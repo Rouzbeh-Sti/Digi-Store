@@ -1,0 +1,40 @@
+name: Backend CI Pipeline
+
+# This ensures the pipeline runs before merging to the main branch
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    # Running on Ubuntu aligns perfectly with standard server environments
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x] # Using Node 22 to match your local setup
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package.json
+
+    - name: Install Backend Dependencies
+      run: npm install
+      working-directory: ./backend
+
+    - name: Run Unit Tests
+      run: npm test
+      working-directory: ./backend
+      env:
+        # Provide dummy environment variables so the server doesn't crash during testing
+        JWT_SECRET: dummy_secret_for_ci_testing
+        PORT: 5000
