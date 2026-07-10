@@ -22,13 +22,18 @@ enum OrderStatus {
   FAILED
 }
 
-// User Service Model
 model User {
   id        Int       @id @default(autoincrement())
   email     String    @unique
-  fullName  String   @default("")
+  fullName  String    @default("")
   password  String
   role      Role      @default(BUYER)
+  
+  // New optional fields specifically for sellers
+  storeName String?
+  phone     String?
+  bio       String?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -37,13 +42,13 @@ model User {
   orders    Order[]   
   reviews   Review[]
 }
-
 // Product Service Model
 model Product {
   id          Int       @id @default(autoincrement())
   title       String
   description String?
   price       Float
+  category    String    @default("General") // Added category field
   sellerId    Int
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

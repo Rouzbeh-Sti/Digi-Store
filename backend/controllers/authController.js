@@ -3,12 +3,14 @@ const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Register a new user and handle extra fields for sellers
 const registerUser = async (req, res) => {
     try {
-        const { email, password, fullName, role } = req.body;
+        // Extract all fields from request body including the new seller ones
+        const { email, password, fullName, role, storeName, phone, bio } = req.body;
 
         if (!email || !password || !fullName) {
-            return res.status(400).json({ message: "لطفاً تمام فیلدها (نام کامل، ایمیل و رمز عبور) را وارد کنید." });
+            return res.status(400).json({ message: "لطفا تمام فیلدهای اصلی را وارد کنید." });
         }
 
         const existingUser = await prisma.user.findUnique({
@@ -16,17 +18,21 @@ const registerUser = async (req, res) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ message: "این ایمیل قبلاً در سیستم ثبت شده است." });
+            return res.status(400).json({ message: "این ایمیل قبلا در سیستم ثبت شده است." });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Create the user and inject the optional seller details if they exist
         const newUser = await prisma.user.create({
             data: {
                 email: email,
                 password: hashedPassword,
                 fullName: fullName,
-                role: role || "BUYER"
+                role: role || "BUYER",
+                storeName: storeName || null,
+                phone: phone || null,
+                bio: bio || null
             }
         });
 
@@ -44,13 +50,13 @@ const registerUser = async (req, res) => {
         );
 
         res.status(201).json({ 
-            message: "ثبت‌نام شما با موفقیت انجام شد!", 
+            message: "ثبت نام شما با موفقیت انجام شد!", 
             token: token,
             user: userWithoutPassword 
         });
     } catch (error) {
         console.error("Register Error:", error);
-        res.status(500).json({ message: "خطایی در سرور هنگام ثبت‌نام رخ داد." });
+        res.status(500).json({ message: "خطایی در سرور هنگام ثبت نام رخ داد." });
     }
 };
 
