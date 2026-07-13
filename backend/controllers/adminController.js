@@ -3,7 +3,6 @@ const prisma = new PrismaClient();
 
 const getPendingProducts = async (req, res) => {
     try {
-        // Fetches all pending products along with approved products for total view control
         const products = await prisma.product.findMany({
             include: {
                 seller: { select: { id: true, fullName: true, storeName: true } }
@@ -50,7 +49,6 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-// Administrative enforcement to toggle ban execution state on accounts
 const toggleUserBan = async (req, res) => {
     try {
         const { userId, isBanned } = req.body;
@@ -67,7 +65,6 @@ const toggleUserBan = async (req, res) => {
     }
 };
 
-// Administrative authority control to dynamically shift system roles
 const updateUserRole = async (req, res) => {
     try {
         const { userId, role } = req.body;

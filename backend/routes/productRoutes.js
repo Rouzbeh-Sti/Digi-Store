@@ -1,19 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getAllProducts, createProduct, getProductById, getSellerProducts } = require('../controllers/productController');
+const { createProduct, getAllProducts } = require('../controllers/productController');
+const { getSellerAnalytics, updateSellerProduct } = require('../controllers/sellerController');
 const { verifyToken, isSeller } = require('../middleware/authMiddleware');
 
-// Protected route: Get products created by the logged in seller
-// This must be before /:id to prevent "seller" being treated as a product ID
-router.get('/seller', verifyToken, isSeller, getSellerProducts);
-
-// Public route: Anyone can view the full catalog and search
-router.get('/', getAllProducts);
-
-// Protected route: Only authenticated sellers can create new products
-router.post('/', verifyToken, isSeller, createProduct);
-
-// Public route: Get details of a single product
-router.get('/:id', getProductById);
+router.get('/', getAllProducts); 
+router.post('/', verifyToken, isSeller, createProduct); 
+router.get('/seller/analytics', verifyToken, isSeller, getSellerAnalytics);
+router.put('/seller/product-edit', verifyToken, isSeller, updateSellerProduct);
 
 module.exports = router;
