@@ -39,6 +39,7 @@ model User {
   fullName         String             @default("")
   password         String
   role             Role               @default(BUYER)
+  isBanned         Boolean            @default(false) // Tracks account suspension status
   storeName        String?
   phone            String?
   bio              String?

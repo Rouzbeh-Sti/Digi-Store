@@ -1,29 +1,50 @@
 const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// Verifies if the user has a valid JWT token
-const verifyToken = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+// Authenticates JWT tokens and instantly enforces database-level ban restrictions
+const verifyToken = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided." });
+        return res.status(401).json({ message: "Access denied. Token missing." });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Contains { userId, role } from authController
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        
+        // Immediate live database checking to neutralize active banned sessions
+        const freshUser = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { isBanned: true }
+        });
+
+        if (!freshUser || freshUser.isBanned) {
+            return res.status(403).json({ message: "Access denied. Your account has been suspended by administration." });
+        }
+
+        req.user = decoded;
         next();
     } catch (error) {
-        res.status(403).json({ message: "Invalid or expired token." });
+        return res.status(403).json({ message: "Invalid or expired token." });
     }
 };
 
-// Verifies if the authenticated user is a seller
+// Validates if the authenticated user possesses the SELLER role clearance
 const isSeller = (req, res, next) => {
-    if (req.user.role !== 'SELLER' && req.user.role !== 'ADMIN') {
-        return res.status(403).json({ message: "Access denied. This action requires Seller privileges." });
+    if (!req.user || req.user.role !== 'SELLER') {
+        return res.status(403).json({ message: "Access denied. Seller privileges required." });
     }
     next();
 };
 
-module.exports = { verifyToken, isSeller };
+// Validates if the authenticated user possesses the ADMIN role clearance
+const isAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'ADMIN') {
+        return res.status(403).json({ message: "Access denied. Administrative privileges required." });
+    }
+    next();
+};
+
+module.exports = { verifyToken, isSeller, isAdmin };
