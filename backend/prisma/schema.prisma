@@ -9,7 +9,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums definition
 enum Role {
   BUYER
   SELLER
@@ -22,45 +21,54 @@ enum OrderStatus {
   FAILED
 }
 
-model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  fullName  String    @default("")
-  password  String
-  role      Role      @default(BUYER)
-  
-  // New optional fields specifically for sellers
-  storeName String?
-  phone     String?
-  bio       String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  products  Product[] 
-  orders    Order[]   
-  reviews   Review[]
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
-// Product Service Model
+
+enum PlanDuration {
+  MONTHLY
+  THREE_MONTHS
+  YEARLY
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  email            String             @unique
+  fullName         String             @default("")
+  password         String
+  role             Role               @default(BUYER)
+  storeName        String?
+  phone            String?
+  bio              String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  products         Product[] 
+  orders           Order[]   
+  reviews          Review[]
+  subscriptions    UserSubscription[]
+}
+
 model Product {
-  id          Int       @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   title       String
   description String?
   price       Float
-  category    String    @default("General") // Added category field
+  category    String        @default("General") // Expected values: 'Course', 'Book', 'License'
+  fileUrl     String        @default("")        // Used for Book downloads or stream link references
+  status      ProductStatus @default(PENDING)   
   sellerId    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  // Relations
-  seller      User        @relation(fields: [sellerId], references: [id])
+  seller      User          @relation(fields: [sellerId], references: [id])
   orderItems  OrderItem[]
   licenses    License[]
   reviews     Review[]
 }
 
-// Order Service Models
 model Order {
   id            Int           @id @default(autoincrement())
   buyerId       Int
@@ -68,7 +76,6 @@ model Order {
   status        OrderStatus   @default(PENDING)
   createdAt     DateTime      @default(now())
 
-  // Relations
   buyer         User          @relation(fields: [buyerId], references: [id])
   items         OrderItem[]
   transaction   Transaction?
@@ -80,27 +87,50 @@ model OrderItem {
   productId Int
   price     Float
 
-  // Relations
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
   license   License?
 }
 
-// License Service Model (Secure File Access)
-model License {
-  id          Int       @id @default(autoincrement())
-  licenseKey  String    @unique
-  productId   Int
-  orderItemId Int       @unique
-  isValid     Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-
-  // Relations
-  product     Product   @relation(fields: [productId], references: [id])
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+model SubscriptionPlan {
+  id          Int                @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  duration    PlanDuration       @default(MONTHLY)
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  
+  subscriptions UserSubscription[]
 }
 
-// Payment Service Model
+model UserSubscription {
+  id                 Int              @id @default(autoincrement())
+  userId             Int
+  subscriptionPlanId Int
+  startDate          DateTime         @default(now())
+  endDate            DateTime
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  user               User             @relation(fields: [userId], references: [id])
+  plan               SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+}
+
+model License {
+  id            Int       @id @default(autoincrement())
+  licenseKey    String    @unique
+  productId     Int
+  orderItemId   Int       @unique
+  downloadCount Int       @default(0)  // Applicable only to downloaded books/software keys
+  expiresAt     DateTime?              
+  isValid       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  product       Product   @relation(fields: [productId], references: [id])
+  orderItem     OrderItem @relation(fields: [orderItemId], references: [id])
+}
+
 model Transaction {
   id            Int       @id @default(autoincrement())
   orderId       Int       @unique
@@ -109,11 +139,9 @@ model Transaction {
   status        String
   createdAt     DateTime  @default(now())
 
-  // Relations
   order         Order     @relation(fields: [orderId], references: [id])
 }
 
-// Review Service Model
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
@@ -122,7 +150,6 @@ model Review {
   productId Int
   createdAt DateTime @default(now())
 
-  // Relations
   user      User     @relation(fields: [userId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
 }
