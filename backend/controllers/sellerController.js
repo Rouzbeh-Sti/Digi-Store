@@ -1,6 +1,43 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Seller Action: Create any digital product (Course, Book, or License)
+const sellerCreateProduct = async (req, res) => {
+    try {
+        const { title, description, price, category, fileUrl } = req.body;
+        const sellerId = req.user.userId;
+
+        if (!title || !price || !category) {
+            return res.status(400).json({ message: "وارد کردن عنوان، قیمت و دسته‌بندی الزامی است." });
+        }
+
+        if (category !== 'License' && !fileUrl) {
+            return res.status(400).json({ message: "برای این نوع محصول، وارد کردن لینک فایل یا استریم الزامی است." });
+        }
+
+        const newProduct = await prisma.product.create({
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                fileUrl: category === 'License' ? '' : fileUrl,
+                status: 'PENDING',
+                sellerId: sellerId
+            }
+        });
+
+        res.status(201).json({
+            message: "محصول با موفقیت ثبت شد و در انتظار تایید مدیریت است.",
+            product: newProduct
+        });
+    } catch (error) {
+        console.error("Seller Create Product Core Error:", error);
+        res.status(500).json({ message: "خطا در ثبت محصول جدید در پایگاه داده." });
+    }
+};
+
+// Seller Action: Fetch store statistics, charts context, and clients registry
 const getSellerAnalytics = async (req, res) => {
     try {
         const sellerId = req.user.userId;
@@ -8,12 +45,8 @@ const getSellerAnalytics = async (req, res) => {
         const products = await prisma.product.findMany({
             where: { sellerId },
             include: {
-                reviews: {
-                    include: { user: { select: { fullName: true, email: true } } }
-                },
-                orderItems: {
-                    include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } }
-                }
+                reviews: { include: { user: { select: { fullName: true, email: true } } } },
+                orderItems: { include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } } }
             }
         });
 
@@ -75,6 +108,7 @@ const getSellerAnalytics = async (req, res) => {
     }
 };
 
+// Seller Action: Modify product properties
 const updateSellerProduct = async (req, res) => {
     try {
         const { productId, title, description, price, category } = req.body;
@@ -104,4 +138,4 @@ const updateSellerProduct = async (req, res) => {
     }
 };
 
-module.exports = { getSellerAnalytics, updateSellerProduct };
+module.exports = { sellerCreateProduct, getSellerAnalytics, updateSellerProduct };
