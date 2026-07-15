@@ -1,93 +1,89 @@
 const { PrismaClient } = require('@prisma/client');
-const crypto = require('crypto'); // Built-in Node.js module for secure random generation
+const crypto = require('crypto');
 const prisma = new PrismaClient();
 
-// Helper function to generate a secure, unique license key (e.g., ADCC-8F9A-4B2C-1D3E)
 const generateLicenseKey = (productTitle) => {
     const prefix = productTitle.substring(0, 4).toUpperCase().padEnd(4, 'X');
     const randomHex = crypto.randomBytes(6).toString('hex').toUpperCase();
     return `${prefix}-${randomHex.slice(0, 4)}-${randomHex.slice(4, 8)}-${randomHex.slice(8, 12)}`;
 };
 
-// Process Checkout: Create Order, OrderItem, Transaction, AND License
 const createOrder = async (req, res) => {
     try {
-        const { productId, paymentMethod } = req.body;
+        const { productIds, paymentMethod } = req.body; 
         const buyerId = req.user.userId;
 
-        if (!productId) {
-            return res.status(400).json({ message: "Product ID is required." });
+        if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+            return res.status(400).json({ message: "سبد خرید شما خالی است." });
         }
 
-        const product = await prisma.product.findUnique({
-            where: { id: parseInt(productId) }
+        const products = await prisma.product.findMany({
+            where: { id: { in: productIds.map(id => parseInt(id)) } }
         });
 
-        if (!product) {
-            return res.status(404).json({ message: "Product not found." });
+        if (products.length !== productIds.length) {
+            return res.status(404).json({ message: "برخی از محصولات در پایگاه داده یافت نشدند." });
         }
 
-        // Use Prisma Transaction to ensure all or nothing is saved
+        const totalAmount = products.reduce((sum, product) => sum + product.price, 0);
+
+        // Execute as a single atomic database transaction
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Create Order and OrderItem
+            
             const order = await tx.order.create({
                 data: {
                     buyerId: buyerId,
-                    totalAmount: product.price,
+                    totalAmount: totalAmount,
                     status: 'COMPLETED',
-                    items: {
-                        create: [
-                            {
-                                productId: product.id,
-                                price: product.price
-                            }
-                        ]
-                    }
-                },
-                include: {
-                    items: true // Include items to get the OrderItem ID
                 }
             });
 
-            const orderItem = order.items[0]; // Assuming single-item checkout for now
-
-            // 2. Create the Payment Transaction
             const transaction = await tx.transaction.create({
                 data: {
                     orderId: order.id,
-                    amount: product.price,
+                    amount: totalAmount,
                     paymentMethod: paymentMethod || 'CREDIT_CARD',
                     status: 'SUCCESS'
                 }
             });
 
-            // 3. GENERATE LICENSE
-            const license = await tx.license.create({
-                data: {
-                    licenseKey: generateLicenseKey(product.title),
-                    productId: product.id,
-                    orderItemId: orderItem.id,
-                    isValid: true
-                }
-            });
+            const processedItems = [];
+            for (const product of products) {
+                const orderItem = await tx.orderItem.create({
+                    data: {
+                        orderId: order.id,
+                        productId: product.id,
+                        price: product.price
+                    }
+                });
 
-            return { order, transaction, license };
+                const license = await tx.license.create({
+                    data: {
+                        licenseKey: generateLicenseKey(product.title),
+                        productId: product.id,
+                        orderItemId: orderItem.id,
+                        isValid: true
+                    }
+                });
+                
+                processedItems.push({ orderItem, license });
+            }
+
+            return { order, transaction, processedItems };
         });
 
         res.status(201).json({
-            message: "Purchase successful! License generated.",
+            message: "پرداخت موفقیت‌آمیز بود! لایسنس‌های شما صادر شد.",
             order: result.order,
-            transaction: result.transaction,
-            license: result.license
+            transaction: result.transaction
         });
 
     } catch (error) {
         console.error("Checkout Error:", error);
-        res.status(500).json({ message: "Failed to process checkout and generate license." });
+        res.status(500).json({ message: "خطا در پردازش سبد خرید و صدور لایسنس." });
     }
 };
 
-// Get all orders for the logged-in buyer
 const getMyOrders = async (req, res) => {
     try {
         const buyerId = req.user.userId;
@@ -97,7 +93,7 @@ const getMyOrders = async (req, res) => {
                 items: {
                     include: {
                         product: true,
-                        license: true // Include the license so the frontend can display it
+                        license: true
                     }
                 },
                 transaction: true

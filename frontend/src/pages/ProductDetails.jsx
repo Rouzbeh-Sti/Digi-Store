@@ -1,86 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { CartContext } from '../context/CartContext';
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { addToCart, cart } = useContext(CartContext);
 
-  // Fetch the specific product details using the ID parameter from the URL
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductDetails = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
         if (response.ok) {
           const data = await response.json();
           setProduct(data);
         } else {
-          // If the product doesn't exist, redirect the user back to the marketplace
           navigate('/marketplace');
         }
       } catch (error) {
-        console.error('Error fetching product details:', error);
+        console.error("Failed to fetch product details:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchProduct();
+    fetchProductDetails();
   }, [id, navigate]);
 
-  // Placeholder function for handling the checkout process
   const handleBuyClick = () => {
-    console.log(`Ready to checkout product: ${product.id}`);
-    alert("به زودی به درگاه پرداخت متصل می شود.");
+    const isAlreadyInCart = cart.some(item => item.id === product.id);
+    if (isAlreadyInCart) {
+      alert("این محصول قبلاً به سبد خرید اضافه شده است!");
+      return;
+    }
+    
+    addToCart(product);
   };
 
-  // Show a loading screen while data is being fetched
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f8f8fc]" style={{ direction: 'rtl' }}>
-        <Navbar />
-        <div className="text-center py-32 text-gray-500 font-bold text-sm">در حال بارگذاری اطلاعات محصول...</div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen bg-[#f8f8fc] flex items-center justify-center font-black">در حال بارگذاری...</div>;
+  if (!product) return null;
 
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
       <Navbar />
-      
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-10">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
+        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xs flex flex-col md:flex-row gap-8">
           
-          {/* Placeholder for the product's main visual/image */}
-          <div className="w-full md:w-1/3 h-64 bg-gradient-to-br from-[#6320ee] to-[#863bff] rounded-2xl flex justify-center items-center text-white text-5xl shadow-inner">
-            📦
+          <div className="flex-1 space-y-6">
+            <div>
+              <span className="px-3 py-1 bg-purple-50 text-[#6d28d9] text-[10px] font-black rounded-lg mb-4 inline-block">
+                {product.category === 'Course' ? 'دوره آموزشی' : product.category === 'License' ? 'لایسنس' : 'کتاب / فایل'}
+              </span>
+              <h1 className="text-3xl font-black text-gray-900 leading-tight">{product.title}</h1>
+              <p className="text-sm font-bold text-gray-400 mt-2">فروشنده: {product.seller?.storeName || product.seller?.fullName}</p>
+            </div>
+            
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 mb-2">توضیحات محصول</h3>
+              <p className="text-xs font-semibold text-gray-600 leading-relaxed whitespace-pre-wrap">{product.description}</p>
+            </div>
           </div>
 
-          {/* Product text information and checkout actions */}
-          <div className="w-full md:w-2/3 flex flex-col justify-between">
-            <div>
-              <h1 className="text-2xl font-black text-gray-900 mb-4">{product.title}</h1>
-              <p className="text-sm font-medium text-gray-500 leading-relaxed mb-6">
-                {product.description || "توضیحاتی برای این محصول ثبت نشده است."}
-              </p>
+          <div className="w-full md:w-80 flex flex-col gap-4">
+            <div className="p-6 bg-gradient-to-b from-purple-50 to-white rounded-3xl border border-purple-100/50 shadow-sm text-center">
+              <span className="block text-xs font-bold text-gray-500 mb-1">قیمت نهایی</span>
+              <span className="text-3xl font-black text-[#6d28d9]">{product.price.toLocaleString('en-US')} <span className="text-sm">تومان</span></span>
               
-              <div className="inline-block bg-purple-50 px-4 py-2 rounded-xl mb-6 border border-purple-100">
-                <span className="text-xs text-gray-500 font-bold ml-2">فروشنده:</span>
-                <span className="text-xs font-black text-[#6d28d9]">{product.seller?.fullName || 'ناشناس'}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-50 p-5 rounded-2xl border border-gray-100">
-              <div className="text-2xl font-black text-gray-900 mb-4 sm:mb-0">
-                {product.price.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">تومان</span>
-              </div>
-              
-              <button 
-                onClick={handleBuyClick}
-                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#6320ee] to-[#863bff] text-white font-black rounded-xl text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
-              >
+              <button onClick={handleBuyClick} className="w-full mt-6 py-3.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer">
                 افزودن به سبد خرید
               </button>
             </div>

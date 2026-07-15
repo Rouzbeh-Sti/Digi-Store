@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import UserMenu from './UserMenu';
 import MobileDrawer from './MobileDrawer';
+import { CartContext } from '../context/CartContext';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -16,6 +17,8 @@ export default function Navbar() {
   const location = useLocation();
   const dropdownRef = useRef(null);
   const mobileSearchRef = useRef(null);
+
+  const { cart, getCartTotal, removeFromCart } = useContext(CartContext);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -172,6 +175,56 @@ export default function Navbar() {
             </svg>
           </button>
 
+          {/* Cart Dropdown Module - Now visible on mobile */}
+          <div className="relative group">
+            <Link to="/cart" className="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-50/50 hover:bg-purple-100 text-[#6d28d9] transition-all relative">
+              <span className="text-lg">🛒</span>
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-sm">
+                  {cart.length}
+                </span>
+              )}
+            </Link>
+
+            {/* Hover Dropdown Interface - Hidden on mobile, visible on sm desktop and up */}
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible sm:group-hover:opacity-100 sm:group-hover:visible transition-all duration-300 transform origin-top-left z-50 text-right hidden sm:flex flex-col">
+              <div className="p-3 border-b border-gray-50 flex justify-between items-center">
+                <span className="text-xs font-black text-gray-900">سبد خرید شما</span>
+                <span className="text-[10px] font-bold text-gray-400">{cart.length} محصول</span>
+              </div>
+              
+              <div className="max-h-60 overflow-y-auto p-2">
+                {cart.length === 0 ? (
+                  <p className="text-center text-xs text-gray-400 font-bold py-6">سبد خرید خالی است.</p>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center p-2 hover:bg-purple-50 rounded-xl transition-colors group/item">
+                      <div className="flex flex-col truncate ml-2">
+                        <span className="text-xs font-black text-gray-900 truncate">{item.title}</span>
+                        <span className="text-[10px] font-bold text-[#6d28d9] mt-0.5">{item.price.toLocaleString('en-US')} تومان</span>
+                      </div>
+                      <button onClick={(e) => { e.preventDefault(); removeFromCart(item.id); }} className="text-red-400 hover:text-red-600 text-xs font-bold opacity-0 group-hover/item:opacity-100 transition-opacity p-1 cursor-pointer">
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {cart.length > 0 && (
+                <div className="p-3 border-t border-gray-50 bg-gray-50/50 rounded-b-2xl">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[11px] font-bold text-gray-500">جمع کل:</span>
+                    <span className="text-xs font-black text-gray-900">{getCartTotal().toLocaleString('en-US')} تومان</span>
+                  </div>
+                  <Link to="/cart" className="block w-full py-2.5 text-center bg-[#6320ee] hover:bg-[#521ac4] text-white text-xs font-black rounded-xl transition-colors shadow-sm active:scale-95 cursor-pointer">
+                    مشاهده فاکتور و پرداخت
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Render Component-Based Modular User Action Trigger Menu */}
           <UserMenu user={user} onLogout={handleLogout} />
         </div>
@@ -192,7 +245,7 @@ export default function Navbar() {
             />
             <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
           </div>
-          <button onClick={() => { setIsSearchBarOpen(false); setSearchQuery(''); }} className="p-2 text-gray-400 hover:text-gray-600 text-sm font-bold">بستن</button>
+          <button onClick={() => { setIsSearchBarOpen(false); setSearchQuery(''); }} className="p-2 text-gray-400 hover:text-gray-600 text-sm font-bold cursor-pointer">بستن</button>
 
           {searchQuery.trim().length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl overflow-hidden flex flex-col z-50 max-h-64 overflow-y-auto">
