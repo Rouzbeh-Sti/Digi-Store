@@ -11,6 +11,8 @@ import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import Cart from './pages/Cart';
+import BuyerDashboard from './pages/BuyerDashboard';
+import PaymentResult from './pages/PaymentResult';
 
 export default function App() {
   return (
@@ -28,6 +30,10 @@ export default function App() {
           <Route path="/seller/dashboard" element={<SellerDashboard />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/settings" element={<Settings />} />
+
+          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
+
+          <Route path="/payment-result" element={<PaymentResult />} />
 
           <Route path="*" element={
             <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>

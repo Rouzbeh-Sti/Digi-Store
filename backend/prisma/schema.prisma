@@ -138,6 +138,7 @@ model Transaction {
   amount        Float
   paymentMethod String
   status        String
+  authority     String?   @unique
   createdAt     DateTime  @default(now())
 
   order         Order     @relation(fields: [orderId], references: [id])

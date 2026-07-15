@@ -8,7 +8,7 @@ export default function Cart() {
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
-  const handleCheckout = async () => {
+const handleCheckout = async () => {
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -22,32 +22,32 @@ export default function Cart() {
     try {
       const productIds = cart.map(item => item.id);
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/checkout`, {
+      // Hit the new request endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ productIds, paymentMethod: 'ZARINPAL' })
+        body: JSON.stringify({ productIds })
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        clearCart(); 
-        alert("🎉 پرداخت با موفقیت انجام شد و لایسنس‌ها صادر گردید.");
-        navigate('/buyer/dashboard'); 
+      if (response.ok && data.paymentUrl) {
+        clearCart(); // Clear cart as they transition to the gateway
+        // Redirect browser to Zarinpal Sandbox
+        window.location.href = data.paymentUrl; 
       } else {
         alert(`خطا: ${data.message}`);
+        setIsProcessing(false);
       }
     } catch (error) {
-      console.error("Checkout Request Error:", error);
-      alert("ارتباط با سرور درگاه پرداخت قطع شد.");
-    } finally {
+      console.error("Gateway Connection Error:", error);
+      alert("ارتباط با سرور قطع شد.");
       setIsProcessing(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
       <Navbar />
