@@ -1,0 +1,76 @@
+@startuml
+title Level 2 Architecture - Marketplace Project
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+
+actor Buyer
+actor Seller
+actor Admin
+
+package "Frontend\nReact + Vite + Tailwind" as Frontend {
+  [Home Page] as Home
+  [Login Page] as Login
+  [Register Page] as Register
+  [Marketplace Page] as Marketplace
+  [Product Details Page] as ProductDetails
+  [Seller Dashboard] as SellerDashboard
+  [Admin Dashboard] as AdminDashboard
+}
+
+package "Backend API\nNode.js + Express" as Backend {
+  [Auth API\n/api/auth] as AuthAPI
+  [Product API\n/api/products] as ProductAPI
+  [Seller API\n/api/seller] as SellerAPI
+  [Buyer API\n/api/buyer] as BuyerAPI
+  [Admin API\n/api/admin] as AdminAPI
+
+  [JWT + RBAC Middleware\nverifyToken, isSeller, isAdmin] as AuthMiddleware
+  [Prisma ORM] as Prisma
+
+  [Order Routes\norderRoutes.js] as OrderRoutes
+}
+
+database "PostgreSQL Database" as PostgreSQL
+
+Buyer --> Frontend
+Seller --> Frontend
+Admin --> Frontend
+
+Frontend --> AuthAPI
+Frontend --> ProductAPI
+Frontend --> SellerAPI
+Frontend --> BuyerAPI
+Frontend --> AdminAPI
+
+AuthAPI --> AuthMiddleware
+SellerAPI --> AuthMiddleware
+BuyerAPI --> AuthMiddleware
+AdminAPI --> AuthMiddleware
+
+AuthAPI --> Prisma
+ProductAPI --> Prisma
+SellerAPI --> Prisma
+BuyerAPI --> Prisma
+AdminAPI --> Prisma
+
+Prisma --> PostgreSQL
+
+OrderRoutes ..> AuthMiddleware
+OrderRoutes ..> Prisma
+
+note right of OrderRoutes
+Exists in code as orderRoutes.js
+but is not mounted in server.js.
+Current status:
+exists but not active
+end note
+
+note bottom of Prisma
+Prisma is an ORM used by the Backend.
+The actual database is PostgreSQL.
+end note
+
+@enduml
