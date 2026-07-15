@@ -1,0 +1,158 @@
+@startuml
+title C4 Level 3 - Seller Component Diagram
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #4B4B4B
+skinparam RectangleBorderColor #6A6A6A
+skinparam RectangleBackgroundColor #F9F9F9
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+skinparam DatabaseBackgroundColor #F8F8F8
+skinparam DatabaseBorderColor #6A6A6A
+
+left to right direction
+
+actor "User\n(Seller)" as Seller
+
+package "Backend API" {
+
+  component "server.js" as Server
+  component "sellerRoutes.js" as Routes
+  component "authMiddleware.js" as AuthMiddleware
+  component "sellerController.js" as Controller
+
+  package "Seller Controller Functions" {
+    component "sellerCreateProduct()" as CreateProduct
+    component "getSellerAnalytics()" as SellerAnalytics
+    component "updateSellerProduct()" as EditProduct
+  }
+
+  component "Prisma Client" as Prisma
+
+  database "PostgreSQL" as DB
+
+  package "Prisma Models" {
+    component "User" as UserModel
+    component "Product" as ProductModel
+    component "OrderItem" as OrderItemModel
+    component "Order" as OrderModel
+    component "Review" as ReviewModel
+  }
+}
+
+' External request flow
+Seller --> Server : HTTP request
+Server --> Routes : mounts router at /api/seller
+
+' Route middleware flow
+Routes --> AuthMiddleware : router.use(verifyToken, isSeller)
+AuthMiddleware --> Prisma : prisma.user.findUnique()
+Prisma --> DB
+
+' Auth details
+AuthMiddleware --> UserModel : checks user exists,\nisBanned = false,\nrole = SELLER
+
+' Route to controller flow
+Routes --> Controller : calls controller functions
+
+' Controller function mapping
+Controller --> CreateProduct : POST /product
+Controller --> SellerAnalytics : GET /analytics
+Controller --> EditProduct : PUT /product-edit
+
+' Mounted API endpoint notes
+note right of Routes
+Declared in sellerRoutes.js:
+POST /product
+GET  /analytics
+PUT  /product-edit
+
+Mounted API paths:
+POST /api/seller/product
+GET  /api/seller/analytics
+PUT  /api/seller/product-edit
+end note
+
+' Seller role note
+note left of Seller
+Seller is not a separate model.
+
+Seller is represented as:
+User.role = SELLER
+end note
+
+' Create Product data flow
+CreateProduct --> Prisma : prisma.product.create()
+CreateProduct --> ProductModel : creates Product
+
+note bottom of CreateProduct
+Creates a new Product with:
+- title
+- description
+- price
+- category
+- fileUrl
+- sellerId = req.user.id
+- status = PENDING
+end note
+
+' Edit Product data flow
+EditProduct --> Prisma : prisma.product.findUnique()
+EditProduct --> ProductModel : finds Product by id
+EditProduct --> Prisma : prisma.product.update()
+
+note bottom of EditProduct
+Update flow:
+1. Find Product by id
+2. Validate product exists
+3. Check ownership:
+   product.sellerId == req.user.id
+4. Update fields
+5. Reset status to PENDING
+end note
+
+' Analytics data flow
+SellerAnalytics --> Prisma : prisma.product.findMany()
+SellerAnalytics --> ProductModel : filters by sellerId
+ProductModel --> OrderItemModel : includes orderItems
+OrderItemModel --> OrderModel : includes order
+OrderModel --> UserModel : includes buyer
+ProductModel --> ReviewModel : includes reviews
+ReviewModel --> UserModel : includes reviewer
+
+note bottom of SellerAnalytics
+Analytics reads seller-owned products:
+
+Product
+  -> OrderItem
+      -> Order
+          -> Buyer/User
+
+Product
+  -> Review
+      -> Reviewer/User
+
+Only COMPLETED orders are counted
+for sales and earnings.
+end note
+
+' Model relationships
+UserModel --> ProductModel : User.products\nsellerId
+UserModel --> OrderModel : User.orders\nbuyerId
+UserModel --> ReviewModel : User.reviews\nuserId
+
+ProductModel --> OrderItemModel : Product.orderItems
+ProductModel --> ReviewModel : Product.reviews
+
+OrderModel --> OrderItemModel : Order.items
+
+' Database access
+ProductModel --> DB
+UserModel --> DB
+OrderItemModel --> DB
+OrderModel --> DB
+ReviewModel --> DB
+
+@enduml

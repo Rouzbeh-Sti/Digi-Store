@@ -1,0 +1,144 @@
+@startuml
+title C4 Level 3 - Database Domain Model (Final Version)
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #2C3E50
+skinparam PackageBorderColor #34495E
+skinparam PackageBackgroundColor #F8F9F9
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #2C3E50
+skinparam ClassHeaderBackgroundColor #E5E8E8
+
+hide methods
+hide empty members
+
+package "Digital Store Domain Model" {
+
+  enum Role {
+BUYER
+SELLER
+ADMIN
+  }
+
+  enum OrderStatus {
+PENDING
+COMPLETED
+FAILED
+  }
+
+  enum ProductStatus {
+PENDING
+APPROVED
+REJECTED
+  }
+
+  enum PlanDuration {
+MONTHLY
+THREE_MONTHS
+YEARLY
+  }
+
+  class User {
+id : UUID
+email : String
+fullName : String
+role : Role
+isBanned : Boolean
+storeName : String?
+phone : String?
+bio : String?
+  }
+
+  class Product {
+id : UUID
+title : String
+price : Float
+status : ProductStatus
+sellerId : UUID
+category : String
+fileUrl : String
+  }
+
+  class License {
+id : UUID
+licenseKey : String
+productId : UUID
+orderItemId : UUID
+downloadCount : Int
+expiresAt : DateTime?
+isValid : Boolean
+  }
+
+  class Order {
+id : UUID
+buyerId : UUID
+totalAmount : Float
+status : OrderStatus
+  }
+
+  class OrderItem {
+id : UUID
+orderId : UUID
+productId : UUID
+price : Float
+  }
+
+  class Transaction {
+id : UUID
+orderId : UUID
+amount : Float
+paymentMethod : String
+status : String
+  }
+
+  class SubscriptionPlan {
+id : UUID
+title : String
+price : Float
+duration : PlanDuration
+isActive : Boolean
+  }
+
+  class UserSubscription {
+id : UUID
+userId : UUID
+subscriptionPlanId : UUID
+startDate : DateTime
+endDate : DateTime
+isActive : Boolean
+  }
+
+  class Review {
+id : UUID
+rating : Int
+comment : String?
+userId : UUID
+productId : UUID
+  }
+}
+
+User "1" -- "0..*" Product : sells
+User "1" -- "0..*" Order : buys
+Order "1" -- "1..*" OrderItem : contains
+Product "1" -- "0..*" OrderItem : referenced in
+Order "1" -- "0..1" Transaction : payment
+OrderItem "1" -- "0..1" License : generates
+Product "1" -- "0..*" License : provides
+User "1" -- "0..*" UserSubscription
+SubscriptionPlan "1" -- "0..*" UserSubscription
+User "1" -- "0..*" Review : writes
+Product "1" -- "0..*" Review : receives
+
+note right of Transaction
+Unique orderId ensures
+at most one transaction per order.
+end note
+
+note right of License
+Unique orderItemId ensures
+at most one license per order item.
+end note
+
+@enduml

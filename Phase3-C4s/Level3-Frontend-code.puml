@@ -1,0 +1,126 @@
+@startuml
+title C4 Level 3 - Frontend Component Diagram
+
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam ArrowColor #4B4B4B
+skinparam ComponentBorderColor #6A6A6A
+skinparam ComponentBackgroundColor #F9F9F9
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+
+actor "User\n(Buyer / Seller / Admin)" as User
+
+rectangle "Frontend App" as FE {
+
+  component "main.jsx" as Main
+  component "App.jsx\nReact Router" as App
+
+  package "Shared UI" as Shared {
+    component "Navbar" as Navbar
+    component "AuthLayout" as AuthLayout
+    component "Hero" as Hero
+    component "ProductCard" as ProductCard
+    component "SellerCTA" as SellerCTA
+    component "UserMenu" as UserMenu
+    component "MobileDrawer" as MobileDrawer
+    component "SharedCustomTable" as SharedTable
+  }
+
+  package "Authentication UI" as Auth {
+    component "Login" as Login
+    component "Register" as Register
+  }
+
+  package "Marketplace UI" as Market {
+    component "Home" as Home
+    component "Marketplace" as Marketplace
+    component "ProductDetails" as ProductDetails
+  }
+
+  package "Seller Dashboard UI" as SellerUI {
+    component "SellerDashboard" as SellerDashboard
+    component "SellerProducts" as SellerProducts
+    component "SellerCustomers" as SellerCustomers
+    component "CreateProductModal" as CreateProductModal
+    component "EditProductModal" as EditProductModal
+  }
+
+  package "Admin Dashboard UI" as AdminUI {
+    component "AdminDashboard" as AdminDashboard
+    component "AdminProductManagement" as AdminProductManagement
+    component "AdminUserManagement" as AdminUserManagement
+    component "InspectionModal" as InspectionModal
+  }
+
+  component "BrowserRouter / Routes" as Router
+}
+
+cloud "Backend API\nVITE_API_BASE_URL" as API
+
+User --> Main
+Main --> App
+App --> Router
+
+Router --> Home : "/"
+Router --> Login : "/login"
+Router --> Register : "/register"
+Router --> Marketplace : "/marketplace"
+Router --> ProductDetails : "/product/:id"
+Router --> SellerDashboard : "/seller/dashboard"
+Router --> AdminDashboard : "/admin/dashboard"
+
+Home --> Navbar
+Home --> Hero
+Home --> ProductCard
+Home --> SellerCTA
+
+Marketplace --> Navbar
+Marketplace --> ProductCard
+
+ProductDetails --> Navbar
+ProductDetails --> API : fetch product details
+
+Login --> AuthLayout
+Register --> AuthLayout
+
+SellerDashboard --> Navbar
+SellerDashboard --> SellerProducts
+SellerDashboard --> SellerCustomers
+SellerDashboard --> CreateProductModal
+SellerDashboard --> EditProductModal
+SellerDashboard --> API : fetch /api/seller/*
+
+AdminDashboard --> Navbar
+AdminDashboard --> AdminProductManagement
+AdminDashboard --> AdminUserManagement
+AdminDashboard --> InspectionModal
+AdminProductManagement --> SharedTable
+AdminUserManagement --> SharedTable
+AdminDashboard --> API : fetch /api/admin/*
+AdminDashboard --> UserMenu
+
+Navbar --> MobileDrawer
+Navbar --> UserMenu
+AuthLayout --> App
+Hero --> API : search / products
+ProductCard --> API : product data
+SellerCTA --> API : seller action
+
+note right of App
+React Router is defined in App.jsx.
+No separate PrivateRoute component
+is visible in the codebase.
+end note
+
+note bottom of API
+Frontend talks to backend via fetch
+using VITE_API_BASE_URL and
+Authorization: Bearer token
+from localStorage when needed.
+end note
+
+@enduml

@@ -1,0 +1,99 @@
+@startuml
+title Level 3 - Backend Component Diagram
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam ArrowColor #4B4B4B
+skinparam ComponentBorderColor #6A6A6A
+skinparam ComponentBackgroundColor #F8F8F8
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+
+package "Backend API" as Backend {
+
+  component "Express App\nserver.js" as App
+
+  package "Authentication" as AuthPkg {
+    component "Auth Routes\nauthRoutes.js" as AuthRoutes
+    component "Auth Controller\nauthController.js" as AuthController
+    component "JWT Verification\nverifyToken" as JWTVerify
+    component "RBAC\nisSeller / isAdmin" as RBAC
+  }
+
+  package "Products" as ProductPkg {
+    component "Product Routes\nproductRoutes.js" as ProductRoutes
+    component "Product Controller\nproductController.js" as ProductController
+  }
+
+  package "Seller" as SellerPkg {
+    component "Seller Routes\nsellerRoutes.js" as SellerRoutes
+    component "Seller Controller\nsellerController.js" as SellerController
+  }
+
+  package "Buyer" as BuyerPkg {
+    component "Buyer Routes\nbuyerRoutes.js" as BuyerRoutes
+    component "Buyer Controller\nbuyerController.js" as BuyerController
+  }
+
+  package "Admin" as AdminPkg {
+    component "Admin Routes\nadminRoutes.js" as AdminRoutes
+    component "Admin Controller\nadminController.js" as AdminController
+  }
+
+  package "Orders" as OrderPkg {
+    component "Order Routes\norderRoutes.js" as OrderRoutes
+    component "Order Controller\norderController.js" as OrderController
+  }
+
+  component "Prisma Client\nData Access Layer" as Prisma
+}
+
+database "PostgreSQL" as DB
+
+App --> AuthRoutes : mounts /api/auth
+App --> ProductRoutes : mounts /api/products
+App --> SellerRoutes : mounts /api/seller
+App --> BuyerRoutes : mounts /api/buyer
+App --> AdminRoutes : mounts /api/admin
+
+AuthRoutes --> AuthController
+ProductRoutes --> ProductController
+SellerRoutes --> SellerController
+BuyerRoutes --> BuyerController
+AdminRoutes --> AdminController
+OrderRoutes --> OrderController
+
+AuthRoutes --> JWTVerify
+SellerRoutes --> JWTVerify
+BuyerRoutes --> JWTVerify
+AdminRoutes --> JWTVerify
+OrderRoutes --> JWTVerify
+
+SellerRoutes --> RBAC
+AdminRoutes --> RBAC
+
+AuthController --> Prisma
+ProductController --> Prisma
+SellerController --> Prisma
+BuyerController --> Prisma
+AdminController --> Prisma
+OrderController --> Prisma
+
+Prisma --> DB
+
+OrderRoutes ..> App : defined but not mounted
+
+note right of OrderRoutes
+orderRoutes.js exists in the codebase,
+but it is not mounted in server.js.
+end note
+
+note bottom of Prisma
+Prisma is the ORM / data access layer.
+PostgreSQL is the actual database.
+end note
+
+@enduml

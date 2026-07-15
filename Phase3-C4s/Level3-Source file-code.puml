@@ -1,0 +1,110 @@
+@startuml
+title C4 Level 3 - Seller Source File Diagram
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #4B4B4B
+skinparam RectangleBorderColor #6A6A6A
+skinparam RectangleBackgroundColor #F9F9F9
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+skinparam DatabaseBackgroundColor #F8F8F8
+skinparam DatabaseBorderColor #6A6A6A
+
+left to right direction
+
+package "Frontend" {
+  component "App.jsx" as App
+  component "SellerDashboard.jsx" as Dashboard
+  component "Navbar.jsx" as Navbar
+  component "CreateProductModal.jsx" as CreateModal
+  component "EditProductModal.jsx" as EditModal
+  component "SellerProducts.jsx" as ProductsUI
+  component "SellerCustomers.jsx" as CustomersUI
+  component "SharedCustomTable.jsx" as TableUI
+}
+
+package "Backend" {
+  component "server.js" as Server
+  component "sellerRoutes.js" as Routes
+  component "authMiddleware.js" as AuthMiddleware
+  component "sellerController.js" as Controller
+
+  package "Controller Functions" {
+    component "sellerCreateProduct()" as CreateFn
+    component "getSellerAnalytics()" as AnalyticsFn
+    component "updateSellerProduct()" as EditFn
+  }
+
+  component "Prisma Client" as Prisma
+
+  package "Prisma Models" {
+    component "User\n(role = SELLER)" as UserModel
+    component "Product" as ProductModel
+    component "OrderItem" as OrderItemModel
+    component "Order" as OrderModel
+    component "Review" as ReviewModel
+  }
+
+  database "PostgreSQL" as DB
+}
+
+' Frontend source-file relationships
+App --> Dashboard : React route\n/seller/dashboard
+
+Dashboard --> Navbar : renders
+Dashboard --> CreateModal : renders / onSave
+Dashboard --> EditModal : renders / onSave
+Dashboard --> ProductsUI : products, onEdit
+Dashboard --> CustomersUI : customers
+
+ProductsUI --> TableUI : renders
+CustomersUI --> TableUI : renders
+
+note right of Dashboard
+SellerDashboard.jsx calls backend by fetch:
+GET  /api/seller/analytics
+POST /api/seller/product
+PUT  /api/seller/product-edit
+end note
+
+CreateModal ..> Dashboard : onSave(formData)
+EditModal ..> Dashboard : onSave(formData)
+
+' Backend source-file relationships
+Server --> Routes : mounts /api/seller
+Routes --> AuthMiddleware : verifyToken, isSeller
+Routes --> Controller : route handlers
+
+Controller ..> CreateFn : contains
+Controller ..> AnalyticsFn : contains
+Controller ..> EditFn : contains
+
+' Auth and persistence flow
+AuthMiddleware --> Prisma : user.findUnique()
+Prisma --> UserModel : check isBanned / role
+
+CreateFn --> Prisma : product.create()
+EditFn --> Prisma : product.findUnique()\nproduct.update()
+AnalyticsFn --> Prisma : product.findMany()
+
+Prisma --> DB
+
+' Data/model relationships used by analytics
+UserModel --> ProductModel : sellerId
+ProductModel --> OrderItemModel : orderItems
+OrderItemModel --> OrderModel : order
+OrderModel --> UserModel : buyer
+ProductModel --> ReviewModel : reviews
+ReviewModel --> UserModel : user
+
+note bottom of Controller
+Exact file-level facts:
+- Seller is not a separate model; it is User with role = SELLER
+- reviews are rendered inline in SellerDashboard.jsx
+- sellerCreateProduct(), getSellerAnalytics(), updateSellerProduct()
+  are functions inside sellerController.js
+end note
+
+@enduml
