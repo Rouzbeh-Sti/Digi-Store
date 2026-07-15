@@ -1,0 +1,46 @@
+@startuml
+skinparam {
+    DefaultFontName "Segoe UI"
+    BackgroundColor white
+    ActorBorderColor #222222
+    ActorBackgroundColor #DDDDDD
+}
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+skinparam rectangle {
+    BackgroundColor<<Main>> #1168BD
+    BorderColor<<Main>> #0B4884
+    FontColor<<Main>> white
+    
+    BackgroundColor<<External>> #999999
+    BorderColor<<External>> #666666
+    FontColor<<External>> white
+}
+
+actor "Admin" as admin
+actor "Buyer" as buyer
+actor "Seller" as seller
+
+rectangle "Digital Store System\n<size:10>[Software System]</size>\n\nPlatform for digital product sales,\nsubscriptions, licenses, and secure access" <<Main>> as system
+
+package "External Systems" {
+    rectangle "Payment Gateway\n<size:10>[External]</size>" <<External>> as payment
+    rectangle "File Storage\n<size:10>[External]</size>" <<External>> as storage
+    rectangle "Email Service\n<size:10>[External]</size>" <<External>> as email
+}
+
+
+admin --> system : "Administer platform\n[HTTPS]"
+buyer --> system : "Browse, buy, subscribe,\ndownload [HTTPS]"
+seller --> system : "Manage products and\nview reports [HTTPS]"
+
+system --> payment : "Process payment\n[API]"
+payment ..> system : "Payment result\n[Callback]"
+
+system --> storage : "Store/retrieve files\n[Secure API]"
+system --> email : "Send emails\n[SMTP/API]"
+
+@enduml
