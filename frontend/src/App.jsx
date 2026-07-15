@@ -8,6 +8,7 @@ import Marketplace from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
 import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -23,6 +24,8 @@ export default function App() {
         <Route path="/seller/dashboard" element={<SellerDashboard />} />
         
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+        <Route path="/settings" element={<Settings />} />
 
         <Route path="*" element={
           <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>

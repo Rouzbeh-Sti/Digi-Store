@@ -5,15 +5,23 @@ import AuthLayout from '../components/AuthLayout';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Custom Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
   const navigate = useNavigate();
 
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    // Hide toast automatically after 3.5 seconds if no redirect happens
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3500);
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setToast({ show: false, message: '', type: '' }); // Reset toast
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
@@ -29,39 +37,43 @@ export default function Login() {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        setSuccessMessage(`خوش آمدید ${data.user.fullName}! ${data.message}`);
         
+        showToast(`خوش آمدید ${data.user.fullName}!`, 'success');
+        
+        // Role-based redirection after a short delay
         setTimeout(() => {
-          navigate('/');
+          if (data.user.role === 'ADMIN') {
+            navigate('/admin/dashboard');
+          } else if (data.user.role === 'SELLER') {
+            navigate('/seller/dashboard');
+          } else {
+            navigate('/'); // BUYER redirects to home
+          }
         }, 1500);
       } else {
-        setErrorMessage(data.message);
+        showToast(data.message, 'error');
       }
     } catch (error) {
       console.error('Network failure details:', error);
-      setErrorMessage('خطا در اتصال به سرور. مطمئن شوید بک‌اَند روشن است.');
+      showToast('خطا در اتصال به سرور. مطمئن شوید بک‌اَند روشن است.', 'error');
     }
   };
 
   return (
     <AuthLayout>
+      {/* Animated Top Toast Notification */}
+      <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100000] px-5 py-3 rounded-xl shadow-2xl transition-all duration-500 ease-out flex items-center gap-3 text-xs font-black ${
+        toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+      } ${
+        toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'
+      }`}>
+        <span className="text-base">{toast.type === 'success' ? '✅' : '⚠️'}</span>
+        {toast.message}
+      </div>
+
       <div className="w-full max-w-sm p-5">
         <h2 className="text-2xl font-black mb-2 text-gray-900 tracking-tight">خوش برگشتید</h2>
         <p className="text-gray-400 mb-8 text-xs font-medium">برای ادامه مدیریت دارایی‌ها وارد حساب خود شوید</p>
-
-        {successMessage && (
-          <div className="mb-5 p-3.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>✓</span>
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>⚠</span>
-            <span>{errorMessage}</span>
-          </div>
-        )}
 
         <form onSubmit={handleLoginSubmit} className="space-y-4">
           <div>

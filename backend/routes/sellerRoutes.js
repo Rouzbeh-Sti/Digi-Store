@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { sellerCreateProduct, getSellerAnalytics, updateSellerProduct } = require('../controllers/sellerController');
+const { createProduct, getSellerAnalytics, updateProduct } = require('../controllers/sellerController');
 const { verifyToken, isSeller } = require('../middleware/authMiddleware');
 
 router.use(verifyToken, isSeller);
 
-router.post('/product', sellerCreateProduct);
+router.post('/product', createProduct);
 router.get('/analytics', getSellerAnalytics);
-router.put('/product-edit', updateSellerProduct);
+router.put('/product-edit', updateProduct);
 
 module.exports = router;

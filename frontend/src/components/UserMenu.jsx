@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function UserMenu({ user, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -28,6 +29,15 @@ export default function UserMenu({ user, onLogout }) {
     );
   }
 
+  // Define dynamic dashboard routing and labeling based on user role
+  const dashboardConfig = {
+    ADMIN: { path: '/admin/dashboard', label: '🛠️ پنل مدیریت' },
+    SELLER: { path: '/seller/dashboard', label: '📈 داشبورد فروش' },
+    BUYER: { path: '/buyer/dashboard', label: '📦 خریدهای من (لایسنس‌ها)' }
+  };
+
+  const currentDash = dashboardConfig[user.role] || dashboardConfig.BUYER;
+
   return (
     <div className="relative" ref={menuRef}>
       <button 
@@ -45,23 +55,35 @@ export default function UserMenu({ user, onLogout }) {
         </div>
       </button>
 
-      {/* Animated User Profile Menu Dropdown */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-3 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden text-right transform origin-top-left transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
           <div className="p-4 bg-gradient-to-b from-purple-50/30 to-transparent border-b border-gray-50 lg:hidden">
             <p className="text-xs font-black text-gray-900">{user.fullName}</p>
             <p className="text-[10px] font-bold text-purple-600 mt-1">نقش: {user.role}</p>
           </div>
+          
           <div className="p-1.5 flex flex-col gap-0.5">
-            <Link to="/dashboard" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
-              👤 مشاهده حساب کاربری
+            <Link 
+              to={currentDash.path} 
+              onClick={() => setIsOpen(false)} 
+              className="w-full text-right px-4 py-3 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors"
+            >
+              {currentDash.label}
             </Link>
-            <Link to="/settings" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
-              ⚙️ تنظیمات پروفایل
+            
+            <Link 
+              to="/settings" 
+              onClick={() => setIsOpen(false)} 
+              className="w-full text-right px-4 py-3 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors"
+            >
+              ⚙️ تنظیمات حساب
             </Link>
+            
+            <div className="border-t border-gray-50 my-1" />
+            
             <button 
               onClick={() => { setIsOpen(false); onLogout(); }}
-              className="w-full text-right px-4 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border-t border-gray-50 mt-1"
+              className="w-full text-right px-4 py-3 text-xs font-black text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
             >
               ✕ خروج از حساب
             </button>

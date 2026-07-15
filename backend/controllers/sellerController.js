@@ -1,8 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Seller Action: Create any digital product (Course, Book, or License)
-const sellerCreateProduct = async (req, res) => {
+// Create any digital product (Course, Book, or License)
+const createProduct = async (req, res) => {
     try {
         const { title, description, price, category, fileUrl } = req.body;
         const sellerId = req.user.userId;
@@ -37,7 +37,7 @@ const sellerCreateProduct = async (req, res) => {
     }
 };
 
-// Seller Action: Fetch store statistics, charts context, and clients registry
+// Fetch store statistics, charts context, and clients registry
 const getSellerAnalytics = async (req, res) => {
     try {
         const sellerId = req.user.userId;
@@ -108,8 +108,8 @@ const getSellerAnalytics = async (req, res) => {
     }
 };
 
-// Seller Action: Modify product properties
-const updateSellerProduct = async (req, res) => {
+// Modify product properties
+const updateProduct = async (req, res) => {
     try {
         const { productId, title, description, price, category } = req.body;
         const sellerId = req.user.userId;
@@ -138,4 +138,4 @@ const updateSellerProduct = async (req, res) => {
     }
 };
 
-module.exports = { sellerCreateProduct, getSellerAnalytics, updateSellerProduct };
+module.exports = { createProduct, getSellerAnalytics, updateProduct };

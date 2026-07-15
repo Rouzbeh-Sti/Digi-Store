@@ -10,10 +10,13 @@ export default function SellerProducts({ products, onEdit }) {
     3: 'status'
   };
 
+  // Accurately map product categories and provide a safe fallback for unknown types
   const renderRowCells = (p) => [
     <span className="text-xs font-black text-gray-900">{p.title}</span>,
     <span className="text-xs font-bold text-gray-500">
-      {p.category === 'Course' ? '📚 دوره آموزشی' : p.category === 'Book' ? '📄 کتاب / PDF' : '🔑 لایسنس'}
+      {p.category === 'Course' ? '📚 دوره آموزشی' : 
+       p.category === 'Book' ? '📄 کتاب / PDF' : 
+       p.category === 'License' ? '🔑 لایسنس' : '📦 سایر موارد'}
     </span>,
     <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${

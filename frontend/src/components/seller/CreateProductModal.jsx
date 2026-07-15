@@ -11,6 +11,7 @@ export default function CreateProductModal({ isOpen, onClose, onSave }) {
 
   if (!isOpen) return null;
 
+  // Handle form submission and prevent state updates on unmounted component
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -22,13 +23,8 @@ export default function CreateProductModal({ isOpen, onClose, onSave }) {
       fileUrl: category === 'License' ? '' : fileUrl,
       description
     });
-
-    setTitle('');
-    setPrice('');
-    setCategory('Course');
-    setFileUrl('');
-    setDescription('');
-    setIsSubmitting(false);
+    
+    // State resets are removed because the component is destroyed by the parent upon success
   };
 
   return createPortal(

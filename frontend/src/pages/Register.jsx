@@ -15,15 +15,21 @@ export default function Register() {
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
 
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  // Custom Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
   const navigate = useNavigate();
 
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3500);
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setToast({ show: false, message: '', type: '' });
 
     const payload = {
         fullName,
@@ -50,22 +56,39 @@ export default function Register() {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
         
-        setSuccessMessage(data.message);
+        showToast(data.message, 'success');
         
+        // Role-based redirection after registration
         setTimeout(() => {
-          navigate('/');
+          if (data.user.role === 'ADMIN') {
+            navigate('/admin/dashboard');
+          } else if (data.user.role === 'SELLER') {
+            navigate('/seller/dashboard');
+          } else {
+            navigate('/'); // BUYER redirects to home
+          }
         }, 1500);
       } else {
-        setErrorMessage(data.message);
+        showToast(data.message, 'error');
       }
     } catch (error) {
       console.error('Registration network error:', error);
-      setErrorMessage('خطا در اتصال به سرور. مطمئن شوید بک اند روشن است.');
+      showToast('خطا در اتصال به سرور. مطمئن شوید بک‌اند روشن است.', 'error');
     }
   };
 
   return (
     <AuthLayout>
+      {/* Animated Top Toast Notification */}
+      <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100000] px-5 py-3 rounded-xl shadow-2xl transition-all duration-500 ease-out flex items-center gap-3 text-xs font-black ${
+        toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+      } ${
+        toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'
+      }`}>
+        <span className="text-base">{toast.type === 'success' ? '✅' : '⚠️'}</span>
+        {toast.message}
+      </div>
+
       <div className="w-full max-w-sm p-5 py-12 z-10">
         <h2 className="text-2xl font-black mb-2 text-gray-900 tracking-tight">ایجاد حساب کاربری</h2>
         <p className="text-gray-400 mb-6 text-xs font-medium">لطفا نوع حساب خود را انتخاب کنید</p>
@@ -90,20 +113,6 @@ export default function Register() {
             فروشنده هستم
           </button>
         </div>
-
-        {successMessage && (
-          <div className="mb-5 p-3.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>✓</span>
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>⚠</span>
-            <span>{errorMessage}</span>
-          </div>
-        )}
 
         <form onSubmit={handleRegisterSubmit} className="space-y-4">
           <div>
@@ -143,7 +152,7 @@ export default function Register() {
           </div>
 
           {role === 'SELLER' && (
-            <div className="space-y-4 pt-4 border-t border-gray-100 mt-4">
+            <div className="space-y-4 pt-4 border-t border-gray-100 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
               <p className="text-xs font-black text-[#6d28d9] mb-2">اطلاعات تکمیلی فروشگاه</p>
               
               <div>

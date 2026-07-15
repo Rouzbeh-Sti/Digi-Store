@@ -1,10 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Public Action: Fetch marketplace approved item indexation structure
+// Fetch marketplace approved item indexation structure with limit support
 const getAllPublicProducts = async (req, res) => {
     try {
-        const { search } = req.query;
+        const { search, limit } = req.query; // Extract limit from query
         const products = await prisma.product.findMany({
             where: {
                 status: 'APPROVED',
@@ -18,7 +18,8 @@ const getAllPublicProducts = async (req, res) => {
             include: {
                 seller: { select: { fullName: true, storeName: true } }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            ...(limit && { take: parseInt(limit) }) // Apply strict limit to DB query if provided
         });
         res.status(200).json(products);
     } catch (error) {
@@ -27,4 +28,26 @@ const getAllPublicProducts = async (req, res) => {
     }
 };
 
-module.exports = { getAllPublicProducts };
+// Fetch a single product by its ID for the product details page
+const getProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await prisma.product.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                seller: { select: { fullName: true, storeName: true } }
+            }
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: "محصول مورد نظر یافت نشد." });
+        }
+
+        res.status(200).json(product);
+    } catch (error) {
+        console.error("Get Product By ID Error:", error);
+        res.status(500).json({ message: "خطا در دریافت اطلاعات محصول از پایگاه داده." });
+    }
+};
+
+module.exports = { getAllPublicProducts, getProductById };

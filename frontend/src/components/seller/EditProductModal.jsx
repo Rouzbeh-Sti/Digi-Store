@@ -10,11 +10,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSave }) {
 
   if (!isOpen) return null;
 
+  // Handle form submission and prevent state updates on unmounted component
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     await onSave({ productId: product.id, title, price: parseFloat(price), category, description });
-    setIsSubmitting(false);
+    // State reset for isSubmitting removed to prevent React unmount warnings
   };
 
   return createPortal(

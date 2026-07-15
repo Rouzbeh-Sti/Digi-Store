@@ -46,10 +46,12 @@ The content is organized as follows:
     ci.yml
 backend/
   controllers/
+    adminController.js
     authController.js
-    dashboardController.js
+    buyerController.js
     orderController.js
     productController.js
+    sellerController.js
   middleware/
     authMiddleware.js
   prisma/
@@ -62,14 +64,20 @@ backend/
         migration.sql
       20260710194519_add_seller_details/
         migration.sql
+      20260713164251_digicourse_subscription_logic/
+        migration.sql
+      20260713173239_add_user_banned_status/
+        migration.sql
       migration_lock.toml
     schema.prisma
     seed.js
   routes/
+    adminRoutes.js
     authRoutes.js
-    dashboardRoutes.js
+    buyerRoutes.js
     orderRoutes.js
     productRoutes.js
+    sellerRoutes.js
   tests/
     order.test.js
     product.test.js
@@ -85,21 +93,27 @@ C4_model/
   level1-c4.png
   level2 container diagram.png
 frontend/
-  public/
-    favicon.svg
-    icons.svg
   src/
-    assets/
-      hero.png
-      react.svg
-      vite.svg
     components/
+      admin/
+        AdminProductManagement.jsx
+        AdminUserManagement.jsx
+        InspectionModal.jsx
+      seller/
+        CreateProductModal.jsx
+        EditProductModal.jsx
+        SellerCustomers.jsx
+        SellerProducts.jsx
       AuthLayout.jsx
       Hero.jsx
+      MobileDrawer.jsx
       Navbar.jsx
       ProductCard.jsx
       SellerCTA.jsx
+      SharedCustomTable.jsx
+      UserMenu.jsx
     pages/
+      AdminDashboard.jsx
       Home.jsx
       Login.jsx
       Marketplace.jsx
@@ -166,123 +180,70 @@ jobs:
         PORT: 5000
 </file>
 
-<file path="backend/controllers/dashboardController.js">
+<file path="backend/controllers/buyerController.js">
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// 1. Get Dashboard Data (Purchased Products & Licenses)
-const getDashboard = async (req, res) => {
+// Get Buyer purchased items and decrypted software activation keys
+const getBuyerDashboard = async (req, res) => {
     try {
-        const userId = req.user.userId; // From verifyToken middleware
+        const userId = req.user.userId;
 
-        // Fetch all successful order items for this user
         const purchases = await prisma.orderItem.findMany({
             where: {
-                order: {
-                    buyerId: userId,
-                    status: 'COMPLETED'
-                }
+                order: { buyerId: userId, status: 'COMPLETED' }
             },
             include: {
-                product: {
-                    select: { id: true, title: true, description: true }
-                },
-                license: {
-                    select: { licenseKey: true, isValid: true, createdAt: true }
-                }
+                product: { select: { id: true, title: true, description: true } },
+                license: { select: { licenseKey: true, isValid: true, createdAt: true } }
             },
-            orderBy: {
-                order: { createdAt: 'desc' }
-            }
+            orderBy: { order: { createdAt: 'desc' } }
         });
 
         res.status(200).json(purchases);
     } catch (error) {
-        console.error("Dashboard Error:", error);
-        res.status(500).json({ message: "Failed to load dashboard data." });
+        console.error("Buyer Dashboard Controller Error:", error);
+        res.status(500).json({ message: "Failed to load buyer customized history workspace." });
     }
 };
 
-// 2. Secure Download Endpoint
-const downloadProduct = async (req, res) => {
+// Handle verified downpipe streams for books and protected assets
+const downloadSecureProduct = async (req, res) => {
     try {
         const { licenseKey } = req.params;
         const userId = req.user.userId;
 
-        // Find the license and deeply include the order to verify ownership
         const license = await prisma.license.findUnique({
             where: { licenseKey },
-            include: {
-                orderItem: {
-                    include: { order: true, product: true }
-                }
-            }
+            include: { orderItem: { include: { order: true, product: true } } }
         });
 
-        // Security Check 1: Does the license exist?
         if (!license) {
-            return res.status(404).json({ message: "License not found." });
+            return res.status(404).json({ message: "Requested secure license registry not found." });
         }
 
-        // Security Check 2: Does the logged-in user actually own this?
         if (license.orderItem.order.buyerId !== userId) {
-            return res.status(403).json({ message: "Access denied. You do not own this license." });
+            return res.status(403).json({ message: "Access denied. Resource asset ownership mismatch." });
         }
 
-        // Security Check 3: Is the license still valid?
         if (!license.isValid) {
-            return res.status(403).json({ message: "This license is no longer valid." });
+            return res.status(403).json({ message: "This active license hash code is no longer valid." });
         }
 
-        // In a full production environment, this is where you would generate a time-limited 
-        // signed URL (like AWS S3) or pipe a local file stream. We'll simulate a secure URL here.
         const secureDownloadUrl = `https://storage.your-ecommerce-app.com/downloads/${license.orderItem.product.id}?token=${license.licenseKey}`;
 
         res.status(200).json({
-            message: "Download authorized.",
+            message: "Download pipeline stream authorized successfully.",
             fileName: `${license.orderItem.product.title}.zip`,
             downloadUrl: secureDownloadUrl
         });
-
     } catch (error) {
-        console.error("Download Error:", error);
-        res.status(500).json({ message: "Failed to process download request." });
+        console.error("Secure download dispatcher breakdown:", error);
+        res.status(500).json({ message: "Failed to process target safe download token generation." });
     }
 };
 
-module.exports = { getDashboard, downloadProduct };
-</file>
-
-<file path="backend/middleware/authMiddleware.js">
-const jwt = require('jsonwebtoken');
-
-// Verifies if the user has a valid JWT token
-const verifyToken = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided." });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Contains { userId, role } from authController
-        next();
-    } catch (error) {
-        res.status(403).json({ message: "Invalid or expired token." });
-    }
-};
-
-// Verifies if the authenticated user is a seller
-const isSeller = (req, res, next) => {
-    if (req.user.role !== 'SELLER' && req.user.role !== 'ADMIN') {
-        return res.status(403).json({ message: "Access denied. This action requires Seller privileges." });
-    }
-    next();
-};
-
-module.exports = { verifyToken, isSeller };
+module.exports = { getBuyerDashboard, downloadSecureProduct };
 </file>
 
 <file path="backend/prisma/migrations/20260611101624_init_digital_store/migration.sql">
@@ -431,111 +392,81 @@ ADD COLUMN     "phone" TEXT,
 ADD COLUMN     "storeName" TEXT;
 </file>
 
+<file path="backend/prisma/migrations/20260713164251_digicourse_subscription_logic/migration.sql">
+-- CreateEnum
+CREATE TYPE "ProductStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "PlanDuration" AS ENUM ('MONTHLY', 'THREE_MONTHS', 'YEARLY');
+
+-- AlterTable
+ALTER TABLE "License" ADD COLUMN     "downloadCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "expiresAt" TIMESTAMP(3);
+
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "fileUrl" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "status" "ProductStatus" NOT NULL DEFAULT 'PENDING';
+
+-- CreateTable
+CREATE TABLE "SubscriptionPlan" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "price" DOUBLE PRECISION NOT NULL,
+    "duration" "PlanDuration" NOT NULL DEFAULT 'MONTHLY',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SubscriptionPlan_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserSubscription" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "subscriptionPlanId" INTEGER NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserSubscription_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "UserSubscription" ADD CONSTRAINT "UserSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserSubscription" ADD CONSTRAINT "UserSubscription_subscriptionPlanId_fkey" FOREIGN KEY ("subscriptionPlanId") REFERENCES "SubscriptionPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+</file>
+
+<file path="backend/prisma/migrations/20260713173239_add_user_banned_status/migration.sql">
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "isBanned" BOOLEAN NOT NULL DEFAULT false;
+</file>
+
 <file path="backend/prisma/migrations/migration_lock.toml">
 # Please do not edit this file manually
 # It should be added in your version-control system (e.g., Git)
 provider = "postgresql"
 </file>
 
-<file path="backend/prisma/seed.js">
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
-const prisma = new PrismaClient();
+<file path="backend/routes/adminRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { getPendingProducts, verifyProduct, getAllUsers, toggleUserBan, updateUserRole, getAllTransactions } = require('../controllers/adminController');
+const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 
-async function main() {
-    await prisma.product.deleteMany();
-    await prisma.user.deleteMany();
+router.use(verifyToken, isAdmin);
 
-    const hashedPassword = await bcrypt.hash("password123", 10);
+router.get('/pending-products', getPendingProducts);
+router.post('/verify-product', verifyProduct);
+router.get('/users', getAllUsers);
+router.post('/user-ban', toggleUserBan);
+router.post('/user-role', updateUserRole);
+router.get('/transactions', getAllTransactions);
 
-    const admin = await prisma.user.create({
-        data: {
-            email: "admin@digistore.com",
-            fullName: "System Admin",
-            password: hashedPassword,
-            role: "ADMIN"
-        }
-    });
-
-    const seller = await prisma.user.create({
-        data: {
-            email: "seller@digistore.com",
-            fullName: "Tech Seller",
-            password: hashedPassword,
-            role: "SELLER",
-            storeName: "DigiTech Academy",
-            phone: "09123456789",
-            bio: "برترین اکادمی اموزش برنامه نویسی و مهندسی نرم افزار"
-        }
-    });
-
-    const buyer = await prisma.user.create({
-        data: {
-            email: "buyer@digistore.com",
-            fullName: "Normal User",
-            password: hashedPassword,
-            role: "BUYER"
-        }
-    });
-
-    await prisma.product.createMany({
-        data: [
-            {
-                title: "React Masterclass 2026",
-                description: "Complete guide to React and Next.js for modern web development.",
-                price: 250000,
-                category: "Course",
-                sellerId: seller.id
-            },
-            {
-                title: "Node.js Backend Architecture",
-                description: "Learn how to build scalable backend systems with Express and Prisma.",
-                price: 180000,
-                category: "Course",
-                sellerId: seller.id
-            },
-            {
-                title: "Clean Code Book (PDF)",
-                description: "A handbook of agile software craftsmanship.",
-                price: 45000,
-                category: "Book",
-                sellerId: seller.id
-            },
-            {
-                title: "System Design Interview (PDF)",
-                description: "Prepare for system design interviews with real world examples.",
-                price: 60000,
-                category: "Book",
-                sellerId: seller.id
-            },
-            {
-                title: "Windows 11 Pro License",
-                description: "Lifetime activation key for Windows 11 Pro.",
-                price: 500000,
-                category: "License",
-                sellerId: seller.id
-            },
-            {
-                title: "JetBrains All Products Pack",
-                description: "1 Year subscription for all JetBrains IDEs.",
-                price: 1200000,
-                category: "License",
-                sellerId: seller.id
-            }
-        ]
-    });
-
-    console.log("Database seeded successfully with Admin, Seller, Buyer, and 6 products!");
-}
-
-main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+module.exports = router;
 </file>
 
 <file path="backend/routes/authRoutes.js">
@@ -551,15 +482,16 @@ router.post('/login', loginUser);
 module.exports = router;
 </file>
 
-<file path="backend/routes/dashboardRoutes.js">
+<file path="backend/routes/buyerRoutes.js">
 const express = require('express');
 const router = express.Router();
-const { getDashboard, downloadProduct } = require('../controllers/dashboardController');
+const { getBuyerDashboard, downloadSecureProduct } = require('../controllers/buyerController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-// Protected routes: Only logged-in users can view their panel and download files
-router.get('/', verifyToken, getDashboard);
-router.get('/download/:licenseKey', verifyToken, downloadProduct);
+router.use(verifyToken);
+
+router.get('/dashboard', getBuyerDashboard);
+router.get('/download/:licenseKey', downloadSecureProduct);
 
 module.exports = router;
 </file>
@@ -573,6 +505,21 @@ const { verifyToken } = require('../middleware/authMiddleware');
 // Protected routes: Only logged-in users can purchase and view their orders
 router.post('/checkout', verifyToken, createOrder);
 router.get('/my-orders', verifyToken, getMyOrders);
+
+module.exports = router;
+</file>
+
+<file path="backend/routes/sellerRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { sellerCreateProduct, getSellerAnalytics, updateSellerProduct } = require('../controllers/sellerController');
+const { verifyToken, isSeller } = require('../middleware/authMiddleware');
+
+router.use(verifyToken, isSeller);
+
+router.post('/product', sellerCreateProduct);
+router.get('/analytics', getSellerAnalytics);
+router.put('/product-edit', updateSellerProduct);
 
 module.exports = router;
 </file>
@@ -769,43 +716,438 @@ export default defineConfig({
 });
 </file>
 
-<file path="frontend/public/favicon.svg">
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
+<file path="frontend/src/components/admin/AdminProductManagement.jsx">
+import React, { useState, useRef, useEffect } from 'react';
+import SharedCustomTable from '../SharedCustomTable';
+
+export default function AdminProductManagement({ products, onVerify, onInspect }) {
+  const [activeMenu, setActiveMenu] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const headers = ["نام محصول / دوره", "نوع کالا", "قیمت پایه", "وضعیت بررسی", "اقدامات مدیریتی"];
+
+  const sortableFields = {
+    0: 'title',
+    2: 'price',
+    3: 'status'
+  };
+
+  const renderRowCells = (p) => [
+    <span className="text-xs font-black text-gray-900">{p.title}</span>,
+    <span className="text-xs font-bold text-gray-500">
+      {p.category === 'Course' ? '📚 دوره آموزشی' : p.category === 'Book' ? '📄 کتاب / PDF' : '🔑 لایسنس'}
+    </span>,
+    <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
+    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
+      p.status === 'APPROVED' ? 'bg-green-50 text-green-600 border border-green-100' :
+      p.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+    }`}>
+      {p.status === 'APPROVED' ? 'منتشر شده' : p.status === 'REJECTED' ? 'رد شده' : 'در انتظار بررسی'}
+    </span>,
+    <div className="relative text-center action-gate">
+      <button 
+        onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === p.id ? null : p.id); }}
+        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] border border-purple-100/60 rounded-xl text-[11px] font-black shadow-xs hover:from-[#6320ee] hover:to-[#863bff] hover:text-white transition-all duration-300 active:scale-95 cursor-pointer"
+      >
+        ⚙️ عملیات
+      </button>
+      {activeMenu === p.id && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-44 bg-white border border-purple-100/80 shadow-2xl rounded-2xl z-50 p-1.5 flex flex-col gap-0.5 text-right transform origin-top transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
+          <button onClick={() => { setActiveMenu(null); onInspect(p); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-purple-50 text-purple-700 rounded-xl transition-all cursor-pointer">🔍 بازرسی کامل محتوا</button>
+          {p.status !== 'APPROVED' && <button onClick={() => { setActiveMenu(null); onVerify(p.id, 'APPROVED'); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-green-50 text-green-600 rounded-xl transition-all cursor-pointer">✅ تایید و انتشار عمومی</button>}
+          {p.status !== 'REJECTED' && <button onClick={() => { setActiveMenu(null); onVerify(p.id, 'REJECTED'); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-red-50 text-red-600 rounded-xl transition-all cursor-pointer">🚫 لغو انتشار و رد کالا</button>}
+        </div>
+      )}
+    </div>
+  ];
+
+  return <div ref={menuRef}><SharedCustomTable headers={headers} rows={products} renderRowCells={renderRowCells} sortableFields={sortableFields} /></div>;
+}
 </file>
 
-<file path="frontend/public/icons.svg">
-<svg xmlns="http://www.w3.org/2000/svg">
-  <symbol id="bluesky-icon" viewBox="0 0 16 17">
-    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
-    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
-  </symbol>
-  <symbol id="discord-icon" viewBox="0 0 20 19">
-    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
-  </symbol>
-  <symbol id="documentation-icon" viewBox="0 0 21 20">
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
-  </symbol>
-  <symbol id="github-icon" viewBox="0 0 19 19">
-    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
-  </symbol>
-  <symbol id="social-icon" viewBox="0 0 20 20">
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
-  </symbol>
-  <symbol id="x-icon" viewBox="0 0 19 19">
-    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
-  </symbol>
-</svg>
+<file path="frontend/src/components/admin/AdminUserManagement.jsx">
+import React, { useState, useRef, useEffect } from 'react';
+import SharedCustomTable from '../SharedCustomTable';
+
+export default function AdminUserManagement({ users, onToggleBan, onRoleChange, onInspect }) {
+  const [activeMenu, setActiveMenu] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const headers = ["نام کاربر", "ایمیل", "سطح دسترسی (نقش)", "وضعیت حساب", "عملیات اداری"];
+
+  const sortableFields = {
+    0: 'fullName',
+    1: 'email',
+    2: 'role'
+  };
+
+  const renderRowCells = (u) => [
+    <span className="text-xs font-black text-gray-900">{u.fullName}</span>,
+    <span className="text-xs font-bold text-gray-500">{u.email}</span>,
+    <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wide ${
+      u.role === 'ADMIN' ? 'bg-purple-100/70 text-purple-700 border border-purple-200/40' :
+      u.role === 'SELLER' ? 'bg-blue-100/70 text-blue-700 border border-blue-200/40' : 'bg-gray-100 text-gray-700 border border-gray-200/50'
+    }`}>
+      {u.role === 'ADMIN' ? '👑 مدیر ارشد' : u.role === 'SELLER' ? '💼 فروشنده مستقل' : '👤 خریدار پلتفرم'}
+    </span>,
+    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${u.isBanned ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+      {u.isBanned ? '🚫 مسدود شده' : '✅ فعال'}
+    </span>,
+    <div className="relative text-center action-gate">
+      <button 
+        onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === u.id ? null : u.id); }}
+        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] border border-purple-100/60 rounded-xl text-[11px] font-black shadow-xs hover:from-[#6320ee] hover:to-[#863bff] hover:text-white transition-all duration-300 active:scale-95 cursor-pointer"
+      >
+        ⚙️ عملیات
+      </button>
+      {activeMenu === u.id && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-white border border-purple-100/80 shadow-2xl rounded-2xl z-50 p-2 flex flex-col gap-1 text-right transform origin-top transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
+          <button onClick={() => { setActiveMenu(null); onInspect(u); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-purple-50 text-purple-700 rounded-xl transition-all cursor-pointer">🔍 بازرسی شناسنامه کاربر</button>
+          <button onClick={() => { setActiveMenu(null); onToggleBan(u.id, !u.isBanned); }} className={`w-full text-right p-2.5 text-[11px] font-black rounded-xl transition-all cursor-pointer ${u.isBanned ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}>{u.isBanned ? '🔓 فعال‌سازی مجدد حساب' : '🚫 مسدودسازی و اخراج'}</button>
+          <div className="border-t border-purple-50 my-1" />
+          <span className="text-[9px] px-2 font-black text-purple-400 block mb-1">تغییر سطح نقش:</span>
+          <div className="grid grid-cols-3 gap-1 px-1">
+            <button onClick={() => { setActiveMenu(null); onRoleChange(u.id, 'BUYER'); }} className="text-[9px] font-black p-1.5 bg-gray-50 text-gray-600 hover:bg-purple-100 hover:text-[#6d28d9] rounded-lg cursor-pointer">Buyer</button>
+            <button onClick={() => { setActiveMenu(null); onRoleChange(u.id, 'SELLER'); }} className="text-[9px] font-black p-1.5 bg-gray-50 text-gray-600 hover:bg-purple-100 hover:text-[#6d28d9] rounded-lg cursor-pointer">Seller</button>
+            <button onClick={() => { setActiveMenu(null); onRoleChange(u.id, 'ADMIN'); }} className="text-[9px] font-black p-1.5 bg-gray-50 text-gray-600 hover:bg-purple-100 hover:text-[#6d28d9] rounded-lg cursor-pointer">Admin</button>
+          </div>
+        </div>
+      )}
+    </div>
+  ];
+
+  return <div ref={menuRef}><SharedCustomTable headers={headers} rows={users} renderRowCells={renderRowCells} sortableFields={sortableFields} /></div>;
+}
 </file>
 
-<file path="frontend/src/assets/react.svg">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+<file path="frontend/src/components/admin/InspectionModal.jsx">
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function InspectionModal({ isOpen, onClose, type, entity }) {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // Small delay to trigger CSS transition after mounting
+      const timer = setTimeout(() => setAnimate(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimate(false);
+      const timer = setTimeout(() => setShouldRender(false), 200); // Wait for transition out
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!shouldRender || !entity) return null;
+
+  return createPortal(
+    <>
+      {/* Smooth Fade Transition Background Layer Overlay */}
+      <div 
+        onClick={onClose} 
+        className={`fixed inset-0 bg-black/50 backdrop-blur-xs z-[99998] transition-opacity duration-300 ease-out ${
+          animate ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      
+      {/* Premium High-Fidelity Animated Inspection Sheet */}
+      <div 
+        className={`fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right transition-all duration-300 ease-out ${
+          animate ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
+        }`} 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">
+            {type === 'user' ? '👤 بررسی مشخصات کامل کاربر' : '📦 بازرسی جزئیات کالا / دوره'}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-black cursor-pointer transition-colors text-lg">✕</button>
+        </div>
+
+        {type === 'user' ? (
+          <div className="space-y-3.5 text-xs font-bold text-gray-600">
+            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-2.5">
+              <p>👥 <span className="text-gray-400 font-medium">نام و نام خانوادگی:</span> <span className="text-gray-900 font-black">{entity.fullName}</span></p>
+              <p>📧 <span className="text-gray-400 font-medium">پست الکترونیکی:</span> <span className="text-gray-900">{entity.email}</span></p>
+              <p>🛡️ <span className="text-gray-400 font-medium">نقش کاربری:</span> <span className="text-purple-600 font-black">{entity.role}</span></p>
+              {entity.storeName && (
+                <p>🏢 <span className="text-gray-400 font-medium">نام تجاری فروشگاه:</span> <span className="text-gray-900">{entity.storeName}</span></p>
+              )}
+              <p>🚦 <span className="text-gray-400 font-medium">وضعیت حساب:</span> 
+                <span className={`mr-2 px-2 py-0.5 rounded text-[10px] font-black ${entity.isBanned ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                  {entity.isBanned ? '🚫 مسدود شده' : '✅ فعال'}
+                </span>
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3.5 text-xs font-bold text-gray-600">
+            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-2.5">
+              <p>📦 <span className="text-gray-400 font-medium">عنوان محصول:</span> <span className="text-gray-900 font-black">{entity.title}</span></p>
+              <p>🏷️ <span className="text-gray-400 font-medium">دسته‌بندی:</span> <span className="text-gray-900">{entity.category}</span></p>
+              <p>💰 <span className="text-gray-400 font-medium">قیمت پایه:</span> <span className="text-purple-600 font-black">{entity.price.toLocaleString('en-US')} تومان</span></p>
+              {entity.fileUrl && (
+                <p className="break-all">🔗 <span className="text-gray-400 font-medium">لینک فایل / استریم:</span> <span className="text-blue-600 font-semibold">{entity.fileUrl}</span></p>
+              )}
+              <p>🚦 <span className="text-gray-400 font-medium">وضعیت بررسی:</span> <span className="text-gray-900 font-black">{entity.status}</span></p>
+              <div className="border-t border-gray-100 pt-2.5 mt-1">
+                <p className="text-gray-400 font-medium">توضیحات معرفی کالا:</p>
+                <p className="text-gray-700 font-medium mt-1 leading-relaxed">{entity.description || 'توضیحاتی برای این کالا ثبت نشده است.'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="pt-4 mt-4 border-t border-gray-100 text-left">
+          <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black rounded-xl transition-colors cursor-pointer">
+            بستن پنجره
+          </button>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+}
 </file>
 
-<file path="frontend/src/assets/vite.svg">
-<svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
+<file path="frontend/src/components/seller/CreateProductModal.jsx">
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function CreateProductModal({ isOpen, onClose, onSave }) {
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('Course'); 
+  const [fileUrl, setFileUrl] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    await onSave({
+      title,
+      price: parseFloat(price),
+      category,
+      fileUrl: category === 'License' ? '' : fileUrl,
+      description
+    });
+
+    setTitle('');
+    setPrice('');
+    setCategory('Course');
+    setFileUrl('');
+    setDescription('');
+    setIsSubmitting(false);
+  };
+
+  return createPortal(
+    <>
+      <div 
+        onClick={() => !isSubmitting && onClose()} 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
+      />
+      <div 
+        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">➕ ثبت و انتشار کالا یا دوره جدید</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان یا نام محصول</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: آموزش پیشرفته ری‌اکت یا لایسنس ویندوز ۱۱" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">نوع محصول دیجیتال</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer">
+              <option value="Course">📚 دوره آموزشی (پخش آنلاین ویدیو)</option>
+              <option value="Book">📄 کتاب دیجیتال / فایل چاپی (PDF / ZIP)</option>
+              <option value="License">🔑 لایسنس اختصاصی نرم‌افزار / کد فعال‌سازی</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت پایه (تومان)</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          {category !== 'License' && (
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-2">
+                {category === 'Course' ? '🔗 لینک استریم ویدیوها' : '🔗 آدرس امن دانلود فایل'}
+              </label>
+              <input type="url" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://storage.digistore.com/..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی کالا</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="سرفصل‌ها یا مشخصات فنی فایل را وارد کنید..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
+              {isSubmitting ? 'در حال ارسال درخواست...' : 'ارسال کالا جهت بررسی و تایید مدیر'}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
+          </div>
+        </form>
+      </div>
+    </>,
+    document.body
+  );
+}
+</file>
+
+<file path="frontend/src/components/seller/EditProductModal.jsx">
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function EditProductModal({ isOpen, onClose, product, onSave }) {
+  const [title, setTitle] = useState(product?.title || '');
+  const [price, setPrice] = useState(product?.price || '');
+  const [category, setCategory] = useState(product?.category || 'Course');
+  const [description, setDescription] = useState(product?.description || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSave({ productId: product.id, title, price: parseFloat(price), category, description });
+    setIsSubmitting(false);
+  };
+
+  return createPortal(
+    <>
+      <div 
+        onClick={() => !isSubmitting && onClose()} 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
+      />
+      <div 
+        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">✏️ ویرایش مشخصات محصول</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان محصول</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت (تومان)</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
+          </div>
+          <div className="pt-4 flex gap-3">
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
+              {isSubmitting ? 'در حال ذخیره‌سازی...' : 'اعمال تغییرات و بررسی مجدد'}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
+          </div>
+        </form>
+      </div>
+    </>,
+    document.body
+  );
+}
+</file>
+
+<file path="frontend/src/components/seller/SellerCustomers.jsx">
+import React from 'react';
+import SharedCustomTable from '../SharedCustomTable';
+
+export default function SellerCustomers({ customers }) {
+  const headers = ["نام کامل دانشجو", "آدرس ایمیل", "محصول خریداری شده"];
+
+  const sortableFields = {
+    0: 'fullName',
+    1: 'email',
+    2: 'productTitle'
+  };
+
+  const renderRowCells = (c) => [
+    <span className="text-xs font-black text-gray-900">{c.fullName}</span>,
+    <span className="text-xs font-bold text-gray-500">{c.email}</span>,
+    <span className="text-xs font-bold text-purple-600">{c.productTitle}</span>
+  ];
+
+  return <SharedCustomTable headers={headers} rows={customers} renderRowCells={renderRowCells} sortableFields={sortableFields} />;
+}
+</file>
+
+<file path="frontend/src/components/seller/SellerProducts.jsx">
+import React from 'react';
+import SharedCustomTable from '../SharedCustomTable';
+
+export default function SellerProducts({ products, onEdit }) {
+  const headers = ["نام محصول / دوره", "نوع کالا", "قیمت پایه", "وضعیت تایید", "عملیات"];
+
+  const sortableFields = {
+    0: 'title',
+    2: 'price',
+    3: 'status'
+  };
+
+  const renderRowCells = (p) => [
+    <span className="text-xs font-black text-gray-900">{p.title}</span>,
+    <span className="text-xs font-bold text-gray-500">
+      {p.category === 'Course' ? '📚 دوره آموزشی' : p.category === 'Book' ? '📄 کتاب / PDF' : '🔑 لایسنس'}
+    </span>,
+    <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
+    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
+      p.status === 'APPROVED' ? 'bg-green-50 text-green-600 border border-green-100' : 
+      p.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+    }`}>
+      {p.status === 'APPROVED' ? 'تایید شده' : p.status === 'REJECTED' ? 'رد شده' : 'در انتظار بررسی'}
+    </span>,
+    <div className="text-center">
+      <button 
+        onClick={() => onEdit(p)} 
+        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] hover:from-[#6320ee] hover:to-[#863bff] hover:text-white border border-purple-100/60 rounded-xl text-xs font-black shadow-xs transition-all duration-300 active:scale-95 cursor-pointer"
+      >
+        ✏️ ویرایش محتوا
+      </button>
+    </div>
+  ];
+
+  return <SharedCustomTable headers={headers} rows={products} renderRowCells={renderRowCells} sortableFields={sortableFields} />;
+}
 </file>
 
 <file path="frontend/src/components/Hero.jsx">
@@ -846,6 +1188,83 @@ export default function Hero({ searchQuery, setSearchQuery }) {
 }
 </file>
 
+<file path="frontend/src/components/MobileDrawer.jsx">
+import React from 'react';
+import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom';
+
+export default function MobileDrawer({ isOpen, onClose, user, isActive }) {
+  return createPortal(
+    <>
+      {/* Smooth Fade Transition Background Layer Overlay */}
+      <div 
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ zIndex: 99998 }}
+      />
+
+      {/* Premium Right-Side Slide-In Animated Navigation Drawer */}
+      <div 
+        className={`fixed top-0 right-0 w-72 bg-white shadow-2xl flex flex-col h-screen transition-transform duration-300 ease-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ zIndex: 99999 }}
+      >
+        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <span className="text-lg font-black text-[#6d28d9]">منوی دسترسی</span>
+          <button 
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl cursor-pointer transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <nav className="flex flex-col gap-2 p-4 text-right flex-1">
+          <Link 
+            to="/" 
+            onClick={onClose}
+            className={`flex items-center gap-2 p-4 text-sm font-black rounded-xl transition-all duration-200 ${isActive('/') ? 'bg-purple-50 text-[#6d28d9]' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            <span className="text-base">🏠</span> صفحه اصلی خانه
+          </Link>
+          <Link 
+            to="/marketplace" 
+            onClick={onClose}
+            className={`flex items-center gap-2 p-4 text-sm font-black rounded-xl transition-all duration-200 ${isActive('/marketplace') ? 'bg-purple-50 text-[#6d28d9]' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            <span className="text-base">🏪</span> بازارچه محصولات
+          </Link>
+          {user && user.role === 'SELLER' && (
+            <Link 
+              to="/seller/dashboard" 
+              onClick={onClose}
+              className={`flex items-center gap-2 p-4 text-sm font-black rounded-xl transition-all duration-200 ${isActive('/seller/dashboard') ? 'bg-purple-50 text-[#6d28d9]' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              <span className="text-base">💼</span> پنل فروشندگان
+            </Link>
+          )}
+          {user && user.role === 'ADMIN' && (
+            <Link 
+              to="/admin/dashboard" 
+              onClick={onClose}
+              className={`flex items-center gap-2 p-4 text-sm font-black rounded-xl transition-all duration-200 ${isActive('/admin/dashboard') ? 'bg-purple-50 text-[#6d28d9]' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              <span className="text-base">🛠️</span> پنل مدیریت ادمین
+            </Link>
+          )}
+        </nav>
+      </div>
+    </>,
+    document.body
+  );
+}
+</file>
+
 <file path="frontend/src/components/SellerCTA.jsx">
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -862,6 +1281,170 @@ export default function SellerCTA() {
         <Link to="/register?role=SELLER" className="inline-block px-6 py-3 bg-white text-[#6d28d9] font-black rounded-xl text-sm hover:bg-purple-50 transition-colors">ثبت‌نام به عنوان فروشنده / مدرس</Link>
       </div>
     </section>
+  );
+}
+</file>
+
+<file path="frontend/src/components/SharedCustomTable.jsx">
+import React, { useState, useMemo } from 'react';
+
+export default function SharedCustomTable({ headers, rows, renderRowCells, sortableFields = {} }) {
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  // Handle dynamic sorting logic based on the selected column key
+  const handleSort = (headerIndex) => {
+    const fieldName = sortableFields[headerIndex];
+    if (!fieldName) return;
+
+    let direction = 'asc';
+    if (sortConfig.key === fieldName && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key: fieldName, direction });
+  };
+
+  const sortedRows = useMemo(() => {
+    if (!sortConfig.key) return rows;
+
+    return [...rows].sort((a, b) => {
+      const aValue = sortConfig.key.split('.').reduce((obj, key) => obj?.[key], a) ?? '';
+      const bValue = sortConfig.key.split('.').reduce((obj, key) => obj?.[key], b) ?? '';
+
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [rows, sortConfig]);
+
+  return (
+    <div className="w-full border border-purple-100/50 bg-white rounded-2xl shadow-xs overflow-hidden max-h-full" style={{ overflowAnchor: 'none' }}>
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-right border-collapse min-w-[750px]">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/50 select-none">
+              {headers.map((header, idx) => {
+                const isSortable = !!sortableFields[idx];
+                return (
+                  <th 
+                    key={idx} 
+                    onClick={() => isSortable && handleSort(idx)}
+                    className={`p-4 text-xs font-black text-gray-400 ${isSortable ? 'cursor-pointer hover:text-purple-600 transition-colors' : ''}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>{header}</span>
+                      {isSortable && (
+                        <span className="text-[10px] opacity-75">
+                          {sortConfig.key === sortableFields[idx] ? (sortConfig.direction === 'asc' ? '🔼' : '🔽') : '🔹'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {sortedRows.length === 0 ? (
+              <tr>
+                <td colSpan={headers.length} className="p-12 text-center text-xs font-bold text-gray-400">
+                  هیچ داده یا رکوردی در این بخش یافت نشد.
+                </td>
+              </tr>
+            ) : (
+              sortedRows.map((row, rowIndex) => (
+                <tr key={row.id || rowIndex} className="hover:bg-purple-50/20 transition-colors duration-150 group">
+                  {renderRowCells(row).map((cellContent, cellIdx) => (
+                    <td 
+                      key={cellIdx} 
+                      style={{ animationDelay: `${rowIndex * 35}ms` }}
+                      className="p-4 animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-300"
+                    >
+                      {cellContent}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/src/components/UserMenu.jsx">
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+
+export default function UserMenu({ user, onLogout }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link to="/login" className="text-xs md:text-sm font-black text-gray-600 hover:text-[#6d28d9] transition-colors px-3 py-2 rounded-xl hover:bg-gray-50">
+          ورود
+        </Link>
+        <Link to="/register" className="px-4 py-2.5 bg-gradient-to-r from-[#6320ee] to-[#7c3aed] text-white text-xs md:text-sm font-black rounded-xl hover:shadow-md transition-all active:scale-95">
+          ثبت نام
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 border border-purple-100 bg-gradient-to-r from-purple-50/40 to-indigo-50/40 p-1.5 md:p-2 md:pr-5 rounded-xl shadow-xs cursor-pointer hover:border-purple-200 transition-all active:scale-95"
+      >
+        <div className="hidden lg:flex flex-col text-right">
+          <span className="text-sm font-black text-gray-900">{user.fullName}</span>
+          <span className="text-xs font-bold text-purple-600 mt-0.5">
+            {user.role === 'ADMIN' ? 'مدیر سیستم' : user.role === 'SELLER' ? 'فروشنده' : 'خریدار'}
+          </span>
+        </div>
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#6320ee] to-[#863bff] text-white font-black text-sm flex justify-center items-center">
+          {user.fullName ? user.fullName.charAt(0) : 'U'}
+        </div>
+      </button>
+
+      {/* Animated User Profile Menu Dropdown */}
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-3 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden text-right transform origin-top-left transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
+          <div className="p-4 bg-gradient-to-b from-purple-50/30 to-transparent border-b border-gray-50 lg:hidden">
+            <p className="text-xs font-black text-gray-900">{user.fullName}</p>
+            <p className="text-[10px] font-bold text-purple-600 mt-1">نقش: {user.role}</p>
+          </div>
+          <div className="p-1.5 flex flex-col gap-0.5">
+            <Link to="/dashboard" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
+              👤 مشاهده حساب کاربری
+            </Link>
+            <Link to="/settings" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
+              ⚙️ تنظیمات پروفایل
+            </Link>
+            <button 
+              onClick={() => { setIsOpen(false); onLogout(); }}
+              className="w-full text-right px-4 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border-t border-gray-50 mt-1"
+            >
+              ✕ خروج از حساب
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 </file>
@@ -1054,104 +1637,6 @@ export default function ProductDetails() {
             </div>
           </div>
 
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="frontend/src/pages/SellerDashboard.jsx">
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-
-export default function SellerDashboard() {
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-
-  // Fetch the products created by the current seller on load
-  useEffect(() => {
-    const fetchSellerProducts = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/seller`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data);
-        } else if (response.status === 401 || response.status === 403) {
-          navigate('/login');
-        }
-      } catch (error) {
-        console.error('Error fetching seller products:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSellerProducts();
-  }, [navigate]);
-
-  return (
-    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
-      <Navbar />
-
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">پنل فروشندگان</h1>
-            <p className="text-sm text-gray-500 mt-2 font-medium">مدیریت محصولات و دارایی های دیجیتال شما</p>
-          </div>
-          <button className="px-6 py-3 bg-[#6320ee] text-white font-black rounded-xl text-sm hover:bg-[#5116c7] transition-all cursor-pointer">
-            + ثبت محصول جدید
-          </button>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          {isLoading ? (
-            <div className="text-center py-10 text-gray-500 font-bold text-sm">در حال بارگذاری لیست محصولات...</div>
-          ) : products.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="p-4 text-xs font-black text-gray-400">شناسه</th>
-                    <th className="p-4 text-xs font-black text-gray-400">نام محصول</th>
-                    <th className="p-4 text-xs font-black text-gray-400">قیمت (تومان)</th>
-                    <th className="p-4 text-xs font-black text-gray-400">دسته بندی</th>
-                    <th className="p-4 text-xs font-black text-gray-400">عملیات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="p-4 text-xs font-bold text-gray-900">#{product.id}</td>
-                      <td className="p-4 text-xs font-bold text-gray-900">{product.title}</td>
-                      <td className="p-4 text-xs font-bold text-gray-900">{product.price.toLocaleString('en-US')}</td>
-                      <td className="p-4 text-xs font-bold text-gray-900">{product.category || 'عمومی'}</td>
-                      <td className="p-4">
-                        <button className="text-xs font-bold text-blue-500 hover:text-blue-700 ml-4 cursor-pointer">ویرایش</button>
-                        <button className="text-xs font-bold text-red-500 hover:text-red-700 cursor-pointer">حذف</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-10 text-gray-500 font-bold text-sm">شما هنوز هیچ محصولی ثبت نکرده اید.</div>
-          )}
         </div>
       </div>
     </div>
@@ -1418,6 +1903,112 @@ The React Compiler is not enabled on this template because of its impact on dev 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 </file>
 
+<file path="backend/controllers/adminController.js">
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const getPendingProducts = async (req, res) => {
+    try {
+        const products = await prisma.product.findMany({
+            include: {
+                seller: { select: { id: true, fullName: true, storeName: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error("Admin Get Products Error:", error);
+        res.status(500).json({ message: "Failed to fetch products registry." });
+    }
+};
+
+const verifyProduct = async (req, res) => {
+    try {
+        const { productId, status } = req.body;
+
+        if (!productId || !['APPROVED', 'REJECTED', 'PENDING'].includes(status)) {
+            return res.status(400).json({ message: "Invalid product ID or status value." });
+        }
+
+        const updatedProduct = await prisma.product.update({
+            where: { id: parseInt(productId) },
+            data: { status: status }
+        });
+
+        res.status(200).json({ message: "Product status successfully modified.", product: updatedProduct });
+    } catch (error) {
+        console.error("Admin Verify Product Error:", error);
+        res.status(500).json({ message: "Failed to update product verification status." });
+    }
+};
+
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: { id: true, email: true, fullName: true, role: true, storeName: true, isBanned: true, createdAt: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Admin Get Users Error:", error);
+        res.status(500).json({ message: "Failed to fetch users registry." });
+    }
+};
+
+const toggleUserBan = async (req, res) => {
+    try {
+        const { userId, isBanned } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: { isBanned: Boolean(isBanned) }
+        });
+
+        res.status(200).json({ message: "User account restriction status updated successfully.", user: updatedUser });
+    } catch (error) {
+        console.error("Admin Toggle Ban Error:", error);
+        res.status(500).json({ message: "Failed to apply restriction on user account." });
+    }
+};
+
+const updateUserRole = async (req, res) => {
+    try {
+        const { userId, role } = req.body;
+
+        if (!['BUYER', 'SELLER', 'ADMIN'].includes(role)) {
+            return res.status(400).json({ message: "Invalid role value." });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: { role }
+        });
+
+        res.status(200).json({ message: "User access authorization role modified.", user: updatedUser });
+    } catch (error) {
+        console.error("Admin Shift Role Error:", error);
+        res.status(500).json({ message: "Failed to modify user access role structure." });
+    }
+};
+
+const getAllTransactions = async (req, res) => {
+    try {
+        const transactions = await prisma.transaction.findMany({
+            include: {
+                order: { include: { buyer: { select: { fullName: true, email: true } } } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(transactions);
+    } catch (error) {
+        console.error("Admin Get Transactions Error:", error);
+        res.status(500).json({ message: "Failed to fetch transaction logs." });
+    }
+};
+
+module.exports = { getPendingProducts, verifyProduct, getAllUsers, toggleUserBan, updateUserRole, getAllTransactions };
+</file>
+
 <file path="backend/controllers/orderController.js">
 const { PrismaClient } = require('@prisma/client');
 const crypto = require('crypto'); // Built-in Node.js module for secure random generation
@@ -1535,56 +2126,22 @@ const getMyOrders = async (req, res) => {
 module.exports = { createOrder, getMyOrders };
 </file>
 
-<file path="backend/controllers/productController.js">
+<file path="backend/controllers/sellerController.js">
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Get all products (Catalog for Buyers) - Now with Search & Limit support
-const getAllProducts = async (req, res) => {
+// Seller Action: Create any digital product (Course, Book, or License)
+const sellerCreateProduct = async (req, res) => {
     try {
-        const { search, limit } = req.query;
-
-        let queryOptions = {
-            include: {
-                seller: {
-                    select: { fullName: true }
-                }
-            },
-            orderBy: { createdAt: 'desc' }
-        };
-
-        // If a search query is provided, ask the database to filter results
-        if (search) {
-            queryOptions.where = {
-                OR: [
-                    { title: { contains: search, mode: 'insensitive' } },
-                    { description: { contains: search, mode: 'insensitive' } }
-                ]
-            };
-        }
-
-        // If a limit is provided, restrict the number of returned records
-        if (limit) {
-            queryOptions.take = parseInt(limit);
-        }
-
-        const products = await prisma.product.findMany(queryOptions);
-        res.status(200).json(products);
-    } catch (error) {
-        console.error("Error fetching products:", error);
-        res.status(500).json({ message: "Failed to fetch products." });
-    }
-};
-
-// Handle the creation of a new product by an authenticated seller
-const createProduct = async (req, res) => {
-    try {
-        // Extract category along with other fields from the request body
-        const { title, description, price, category } = req.body;
+        const { title, description, price, category, fileUrl } = req.body;
         const sellerId = req.user.userId;
 
-        if (!title || price === undefined) {
-            return res.status(400).json({ message: "Title and price are required." });
+        if (!title || !price || !category) {
+            return res.status(400).json({ message: "وارد کردن عنوان، قیمت و دسته‌بندی الزامی است." });
+        }
+
+        if (category !== 'License' && !fileUrl) {
+            return res.status(400).json({ message: "برای این نوع محصول، وارد کردن لینک فایل یا استریم الزامی است." });
         }
 
         const newProduct = await prisma.product.create({
@@ -1592,84 +2149,344 @@ const createProduct = async (req, res) => {
                 title,
                 description,
                 price: parseFloat(price),
-                category: category || "General", // Fallback to 'General' if no category is provided
-                sellerId
+                category,
+                fileUrl: category === 'License' ? '' : fileUrl,
+                status: 'PENDING',
+                sellerId: sellerId
             }
         });
 
-        res.status(201).json({ message: "Product created successfully!", product: newProduct });
-    } catch (error) {
-        console.error("Error creating product:", error);
-        res.status(500).json({ message: "Failed to create product." });
-    }
-};
-
-// Fetch a single product by its ID to display on the product details page
-const getProductById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const product = await prisma.product.findUnique({
-            where: { id: parseInt(id) },
-            include: {
-                seller: {
-                    select: { fullName: true }
-                }
-            }
+        res.status(201).json({
+            message: "محصول با موفقیت ثبت شد و در انتظار تایید مدیریت است.",
+            product: newProduct
         });
-
-        // Return a 404 status if the product does not exist
-        if (!product) {
-            return res.status(404).json({ message: "Product not found." });
-        }
-
-        res.status(200).json(product);
     } catch (error) {
-        console.error("Error fetching product:", error);
-        res.status(500).json({ message: "Failed to fetch product details." });
+        console.error("Seller Create Product Core Error:", error);
+        res.status(500).json({ message: "خطا در ثبت محصول جدید در پایگاه داده." });
     }
 };
 
-// Fetch products created by the currently logged in seller
-const getSellerProducts = async (req, res) => {
+// Seller Action: Fetch store statistics, charts context, and clients registry
+const getSellerAnalytics = async (req, res) => {
     try {
         const sellerId = req.user.userId;
+
         const products = await prisma.product.findMany({
-            where: { sellerId: sellerId },
-            orderBy: { createdAt: 'desc' }
+            where: { sellerId },
+            include: {
+                reviews: { include: { user: { select: { fullName: true, email: true } } } },
+                orderItems: { include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } } }
+            }
         });
-        res.status(200).json(products);
+
+        let totalEarnings = 0;
+        let totalSales = 0;
+        const customersMap = new Map();
+        const recentReviews = [];
+
+        products.forEach(product => {
+            product.orderItems.forEach(item => {
+                if (item.order.status === 'COMPLETED') {
+                    totalEarnings += item.price;
+                    totalSales += 1;
+                    const buyer = item.order.buyer;
+                    if (buyer) {
+                        customersMap.set(buyer.email, {
+                            fullName: buyer.fullName,
+                            email: buyer.email,
+                            productTitle: product.title,
+                            purchaseDate: item.order.createdAt
+                        });
+                    }
+                }
+            });
+
+            product.reviews.forEach(review => {
+                recentReviews.push({
+                    id: review.id,
+                    rating: review.rating,
+                    comment: review.comment,
+                    productTitle: product.title,
+                    buyerName: review.user.fullName,
+                    createdAt: review.createdAt
+                });
+            });
+        });
+
+        recentReviews.sort((a, b) => b.createdAt - a.createdAt);
+
+        const monthlyData = [
+            { month: 'فروردین', sales: Math.round(totalSales * 0.1), earnings: Math.round(totalEarnings * 0.1) },
+            { month: 'اردیبهشت', sales: Math.round(totalSales * 0.15), earnings: Math.round(totalEarnings * 0.15) },
+            { month: 'خرداد', sales: Math.round(totalSales * 0.2), earnings: Math.round(totalEarnings * 0.2) },
+            { month: 'تیر', sales: Math.round(totalSales * 0.55), earnings: Math.round(totalEarnings * 0.55) },
+        ];
+
+        res.status(200).json({
+            productsCount: products.length,
+            totalEarnings,
+            totalSales,
+            products: products.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category, status: p.status, description: p.description, fileUrl: p.fileUrl })),
+            customers: Array.from(customersMap.values()),
+            recentReviews: recentReviews.slice(0, 5),
+            monthlyData
+        });
     } catch (error) {
-        console.error("Error fetching seller products:", error);
-        res.status(500).json({ message: "Failed to fetch seller products." });
+        console.error("Seller Analytics Extraction Error:", error);
+        res.status(500).json({ message: "Failed to extract seller performance metrics." });
     }
 };
 
-// Make sure to export the new function at the bottom of the file
-// module.exports = { getAllProducts, createProduct, getProductById, getSellerProducts };
+// Seller Action: Modify product properties
+const updateSellerProduct = async (req, res) => {
+    try {
+        const { productId, title, description, price, category } = req.body;
+        const sellerId = req.user.userId;
 
-module.exports = { getAllProducts, createProduct, getProductById, getSellerProducts };
+        const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
+
+        if (!product || product.sellerId !== sellerId) {
+            return res.status(403).json({ message: "Unauthorized operation on this asset resource." });
+        }
+
+        const updatedProduct = await prisma.product.update({
+            where: { id: parseInt(productId) },
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                status: 'PENDING'
+            }
+        });
+
+        res.status(200).json({ message: "Product modified successfully and returned to queue.", product: updatedProduct });
+    } catch (error) {
+        console.error("Seller Edit Product Exception:", error);
+        res.status(500).json({ message: "Failed to modify product attributes." });
+    }
+};
+
+module.exports = { sellerCreateProduct, getSellerAnalytics, updateSellerProduct };
 </file>
 
-<file path="backend/routes/productRoutes.js">
-const express = require('express');
-const router = express.Router();
-const { getAllProducts, createProduct, getProductById, getSellerProducts } = require('../controllers/productController');
-const { verifyToken, isSeller } = require('../middleware/authMiddleware');
+<file path="backend/middleware/authMiddleware.js">
+const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// Protected route: Get products created by the logged in seller
-// This must be before /:id to prevent "seller" being treated as a product ID
-router.get('/seller', verifyToken, isSeller, getSellerProducts);
+// Authenticates JWT tokens and instantly enforces database-level ban restrictions
+const verifyToken = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-// Public route: Anyone can view the full catalog and search
-router.get('/', getAllProducts);
+    if (!token) {
+        return res.status(401).json({ message: "Access denied. Token missing." });
+    }
 
-// Protected route: Only authenticated sellers can create new products
-router.post('/', verifyToken, isSeller, createProduct);
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        
+        // Immediate live database checking to neutralize active banned sessions
+        const freshUser = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { isBanned: true }
+        });
 
-// Public route: Get details of a single product
-router.get('/:id', getProductById);
+        if (!freshUser || freshUser.isBanned) {
+            return res.status(403).json({ message: "Access denied. Your account has been suspended by administration." });
+        }
 
-module.exports = router;
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(403).json({ message: "Invalid or expired token." });
+    }
+};
+
+// Validates if the authenticated user possesses the SELLER role clearance
+const isSeller = (req, res, next) => {
+    if (!req.user || req.user.role !== 'SELLER') {
+        return res.status(403).json({ message: "Access denied. Seller privileges required." });
+    }
+    next();
+};
+
+// Validates if the authenticated user possesses the ADMIN role clearance
+const isAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'ADMIN') {
+        return res.status(403).json({ message: "Access denied. Administrative privileges required." });
+    }
+    next();
+};
+
+module.exports = { verifyToken, isSeller, isAdmin };
+</file>
+
+<file path="backend/prisma/seed.js">
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
+const prisma = new PrismaClient();
+
+async function main() {
+    // Clear existing records to ensure zero conflicts during setup
+    await prisma.review.deleteMany();
+    await prisma.license.deleteMany();
+    await prisma.transaction.deleteMany();
+    await prisma.orderItem.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.userSubscription.deleteMany();
+    await prisma.subscriptionPlan.deleteMany();
+    await prisma.product.deleteMany();
+    await prisma.user.deleteMany();
+
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
+    // 1. Core System Administrators
+    const admin = await prisma.user.create({
+        data: {
+            email: "admin@digistore.com",
+            fullName: "System Admin",
+            password: hashedPassword,
+            role: "ADMIN"
+        }
+    });
+
+    // 2. Verified Specialized Sellers
+    const techSeller = await prisma.user.create({
+        data: {
+            email: "seller@digistore.com",
+            fullName: "Tech Seller",
+            password: hashedPassword,
+            role: "SELLER",
+            storeName: "DigiTech Academy",
+            phone: "09123456789",
+            bio: "برترین آکادمی آموزش برنامه نویسی و مهندسی نرم افزار"
+        }
+    });
+
+    const bookSeller = await prisma.user.create({
+        data: {
+            email: "bookseller@digistore.com",
+            fullName: "Amin Book Store",
+            password: hashedPassword,
+            role: "SELLER",
+            storeName: "کتابخانه دیجیتال امین",
+            phone: "09198765432",
+            bio: "مرجع انتشار تخصصی کتاب‌های مهندسی و علوم رایانه"
+        }
+    });
+
+    // 3. Platform Buyers (Customers)
+    const buyer1 = await prisma.user.create({
+        data: { email: "buyer1@digistore.com", fullName: "Mahan Soltani", password: hashedPassword, role: "BUYER" }
+    });
+
+    const buyer2 = await prisma.user.create({
+        data: { email: "buyer2@digistore.com", fullName: "Erfan Baneshi", password: hashedPassword, role: "BUYER" }
+    });
+
+    const buyer3 = await prisma.user.create({
+        data: { email: "buyer3@digistore.com", fullName: "Rouzbeh Mirmotahari", password: hashedPassword, role: "BUYER" }
+    });
+
+    // 4. Shared Subscription Plans for Online Courses (DigiCourse Model)
+    const monthlyPlan = await prisma.subscriptionPlan.create({
+        data: { title: "اشتراک ماهانه دیجی‌کورس", description: "دسترسی آنلاین کامل به تمامی دوره‌های آموزشی ویدئویی به مدت ۳۰ روز", price: 95000, duration: "MONTHLY", isActive: true }
+    });
+
+    const yearlyPlan = await prisma.subscriptionPlan.create({
+        data: { title: "اشتراک سالانه دیجی‌کورس", description: "دسترسی آنلاین کامل به تمامی دوره‌های آموزشی ویدئویی به مدت ۳۶۵ روز", price: 790000, duration: "YEARLY", isActive: true }
+    });
+
+    // 5. Product Registry Simulation (Approved, Pending, and Rejected Statuses)
+    // Category 'Course' products have stream URLs, while 'Book' products contain download paths.
+    const course1 = await prisma.product.create({
+        data: { title: "React Masterclass 2026", description: "Complete streaming guide to React and Next.js.", price: 250000, category: "Course", fileUrl: "https://stream.digistore.com/react2026", status: "APPROVED", sellerId: techSeller.id }
+    });
+
+    const course2 = await prisma.product.create({
+        data: { title: "Node.js Backend Architecture", description: "Learn scalable backend systems with Express and Prisma.", price: 180000, category: "Course", fileUrl: "https://stream.digistore.com/nodejs-arch", status: "APPROVED", sellerId: techSeller.id }
+    });
+
+    const coursePending = await prisma.product.create({
+        data: { title: "Flutter Mobile Development", description: "Cross-platform mobile apps architecture.", price: 320000, category: "Course", fileUrl: "https://stream.digistore.com/flutter-dev", status: "PENDING", sellerId: techSeller.id }
+    });
+
+    const book1 = await prisma.product.create({
+        data: { title: "Clean Code Book (PDF)", description: "A handbook of agile software craftsmanship.", price: 45000, category: "Book", fileUrl: "https://storage.digistore.com/files/books/clean-code.pdf", status: "APPROVED", sellerId: bookSeller.id }
+    });
+
+    const license1 = await prisma.product.create({
+        data: { title: "Windows 11 Pro License", description: "Lifetime digital activation key for Windows 11 Pro.", price: 500000, category: "License", fileUrl: "", status: "APPROVED", sellerId: techSeller.id }
+    });
+
+    const rejectedProduct = await prisma.product.create({
+        data: { title: "Cracked Software Pack v2", description: "Illegal cracked applications download index.", price: 15000, category: "General", fileUrl: "https://storage.digistore.com/cracked.zip", status: "REJECTED", sellerId: techSeller.id }
+    });
+
+    // 6. User Subscriptions Generation
+    const now = new Date();
+    // Active subscription for buyer1
+    await prisma.userSubscription.create({
+        data: { userId: buyer1.id, subscriptionPlanId: monthlyPlan.id, startDate: now, endDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), isActive: true }
+    });
+
+    // Expired subscription for buyer2
+    await prisma.userSubscription.create({
+        data: { userId: buyer2.id, subscriptionPlanId: monthlyPlan.id, startDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000), endDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), isActive: false }
+    });
+
+    // 7. Core Order Simulation (Single Purchase Flows & Transaction Logging)
+    // Buyer 1 purchases a downloaded asset directly (Clean Code PDF)
+    const order1 = await prisma.order.create({
+        data: {
+            buyerId: buyer1.id,
+            totalAmount: book1.price,
+            status: 'COMPLETED',
+            items: { create: [{ productId: book1.id, price: book1.price }] }
+        },
+        include: { items: true }
+    });
+
+    await prisma.transaction.create({
+        data: { orderId: order1.id, amount: book1.price, paymentMethod: "ZARINPAL", status: "SUCCESS" }
+    });
+
+    await prisma.license.create({
+        data: { licenseKey: "BOOK-CLEAN-CODE-A1B2", productId: book1.id, orderItemId: order1.items[0].id, downloadCount: 1, isValid: true }
+    });
+
+    // Buyer 3 purchases a software operational asset directly (Windows 11 License)
+    const order2 = await prisma.order.create({
+        data: {
+            buyerId: buyer3.id,
+            totalAmount: license1.price,
+            status: 'COMPLETED',
+            items: { create: [{ productId: license1.id, price: license1.price }] }
+        },
+        include: { items: true }
+    });
+
+    await prisma.transaction.create({
+        data: { orderId: order2.id, amount: license1.price, paymentMethod: "SHAPARAK", status: "SUCCESS" }
+    });
+
+    await prisma.license.create({
+        data: { licenseKey: "WIN11-PRO-X9R2-Z7M1", productId: license1.id, orderItemId: order2.items[0].id, downloadCount: 0, isValid: true }
+    });
+
+    console.log("Database successfully seeded with comprehensive real-world simulated data matching SRS requirements!");
+}
+
+main()
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
 </file>
 
 <file path="frontend/src/components/AuthLayout.jsx">
@@ -1719,170 +2536,6 @@ export default function AuthLayout({ children }) {
       </div>
 
     </div>
-  );
-}
-</file>
-
-<file path="frontend/src/components/Navbar.jsx">
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-
-export default function Navbar() {
-  const [user, setUser] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dropdownRef = useRef(null);
-
-  // Load user from local storage
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    navigate('/');
-  };
-
-  const isActive = (path) => location.pathname === path;
-
-  // Handle clicking outside of the search dropdown to close it
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Debounced search logic to prevent spamming the backend
-  useEffect(() => {
-    if (searchQuery.trim().length === 0) {
-      setSearchResults([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    setIsSearching(true);
-    setShowDropdown(true);
-
-    const delayDebounceFn = setTimeout(async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products?search=${searchQuery}&limit=5`);
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data);
-        }
-      } catch (error) {
-        console.error('Error fetching search results:', error);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-purple-100/50 px-6 py-4 shadow-xs">
-      <div className="max-w-6xl mx-auto flex justify-between items-center w-full gap-6">
-        
-{/* Navigation Links */}
-        <div className="flex items-center gap-8">
-          <Link to="/" className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#6d28d9] to-[#863bff] tracking-tight hover:opacity-90 transition-opacity">DigiStore</Link>
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-bold text-gray-500">
-            <Link to="/" className={`pb-1 transition-colors ${isActive('/') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>خانه</Link>
-            <Link to="/marketplace" className={`pb-1 transition-colors ${isActive('/marketplace') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>بازارچه محصولات</Link>
-            {user && user.role === 'SELLER' && (
-              <Link to="/seller/dashboard" className={`pb-1 transition-colors ${isActive('/seller/dashboard') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>پنل فروشندگان</Link>
-            )}
-          </nav>
-        </div>
-
-        {/* Global Search Bar with Dropdown */}
-        <div className="hidden md:block flex-1 max-w-md relative" ref={dropdownRef}>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="جستجوی محصول..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => { if(searchQuery.trim().length > 0) setShowDropdown(true) }}
-              className="w-full py-2.5 pr-10 pl-4 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:bg-white focus:border-[#6320ee] transition-all"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
-          </div>
-
-          {showDropdown && (
-            <div className="absolute top-full mt-2 w-full bg-white border border-gray-100 rounded-xl shadow-lg shadow-purple-100/50 overflow-hidden flex flex-col z-50">
-              {isSearching ? (
-                <div className="p-4 text-center text-xs font-bold text-gray-400">در حال جستجو...</div>
-              ) : searchResults.length > 0 ? (
-                <>
-                  {searchResults.map((product) => (
-                    <Link
-                      key={product.id}
-                      to={`/product/${product.id}`}
-                      onClick={() => { setShowDropdown(false); setSearchQuery(''); }}
-                      className="p-3 border-b border-gray-50 hover:bg-purple-50 transition-colors flex flex-col gap-1"
-                    >
-                      <span className="text-xs font-black text-gray-900 line-clamp-1">{product.title}</span>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-[10px] text-gray-500 font-medium">فروشنده: {product.seller?.fullName || 'ناشناس'}</span>
-                        <span className="text-[10px] font-black text-[#6d28d9]">{product.price.toLocaleString('en-US')} تومان</span>
-                      </div>
-                    </Link>
-                  ))}
-                </>
-              ) : (
-                <div className="p-4 text-center text-xs font-bold text-gray-400">محصولی با این نام پیدا نشد!</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* User Account Section */}
-        <div className="flex items-center gap-4">
-          {user ? (
-            <div className="flex items-center gap-3.5 border border-purple-100/80 bg-gradient-to-r from-purple-50/40 to-indigo-50/40 p-1.5 pr-4 rounded-2xl shadow-xs">
-              <div className="flex flex-col text-right">
-                <span className="text-sm font-black text-gray-900">{user.fullName}</span>
-                <span className="text-[11px] font-bold text-purple-600 tracking-wide">
-                  {user.role === 'BUYER' ? 'خریدار' : user.role === 'SELLER' ? 'فروشنده / مدرس' : 'مدیر سیستم'}
-                </span>
-              </div>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6320ee] to-[#863bff] text-white font-black text-sm flex justify-center items-center shadow-sm">
-                {user.fullName ? user.fullName.charAt(0) : 'U'}
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="mr-1 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all font-black text-sm cursor-pointer"
-                title="خروج از حساب"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <Link to="/login" className="text-sm font-black text-gray-600 hover:text-[#6d28d9] transition-colors px-2 py-1">ورود</Link>
-              <Link to="/register" className="px-5 py-2.5 bg-gradient-to-r from-[#6320ee] to-[#7c3aed] hover:shadow-lg hover:shadow-purple-100 text-white text-sm font-black rounded-xl transition-all">ثبت نام رایگان</Link>
-            </div>
-          )}
-        </div>
-
-      </div>
-    </header>
   );
 }
 </file>
@@ -2110,6 +2763,358 @@ node_modules
 .env
 </file>
 
+<file path="frontend/src/components/Navbar.jsx">
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import UserMenu from './UserMenu';
+import MobileDrawer from './MobileDrawer';
+
+export default function Navbar() {
+  const [user, setUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchBarOpen, setIsSearchBarOpen] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dropdownRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setIsMenuOpen(false);
+    navigate('/');
+  };
+
+  const isActive = (path) => location.pathname === path;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+      if (mobileSearchRef.current && !mobileSearchRef.current.contains(event.target)) {
+        setIsSearchBarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setShowDropdown(true);
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products?search=${searchQuery}&limit=5`);
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data);
+        }
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  return (
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100/60 px-4 md:px-6 py-4 shadow-sm">
+      <div className="max-w-6xl mx-auto flex justify-between items-center w-full gap-4">
+        
+        {/* Right Section: Mobile Menu Trigger Icon Button & Logo */}
+        <div className="flex items-center gap-4 lg:gap-8">
+          <button 
+            onClick={() => setIsMenuOpen(true)}
+            className="lg:hidden p-2 text-gray-700 hover:text-[#6d28d9] hover:bg-purple-50 rounded-xl transition-all cursor-pointer"
+            aria-label="Open Menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <Link to="/" className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#6d28d9] to-[#863bff] tracking-tight hover:opacity-90 transition-opacity">
+            DigiStore
+          </Link>
+
+          {/* Desktop Core Route Links */}
+          <nav className="hidden lg:flex items-center gap-6 text-sm font-bold text-gray-500">
+            <Link to="/" className={`pb-1 transition-all duration-200 ${isActive('/') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>خانه</Link>
+            <Link to="/marketplace" className={`pb-1 transition-all duration-200 ${isActive('/marketplace') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>بازارچه محصولات</Link>
+            {user && user.role === 'SELLER' && (
+              <Link to="/seller/dashboard" className={`pb-1 transition-all duration-200 ${isActive('/seller/dashboard') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>پنل فروشندگان</Link>
+            )}
+            {user && user.role === 'ADMIN' && (
+              <Link to="/admin/dashboard" className={`pb-1 transition-all duration-200 ${isActive('/admin/dashboard') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>پنل مدیریت ادمین</Link>
+            )}
+          </nav>
+        </div>
+
+        {/* Center Section: Desktop Live Search Layout Component */}
+        <div className="hidden md:block flex-1 max-w-sm relative" ref={dropdownRef}>
+          <div className="relative group">
+            <input
+              type="text"
+              placeholder="جستجوی محصول، دوره، لایسنس..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => { if(searchQuery.trim().length > 0) setShowDropdown(true) }}
+              className="w-full py-2.5 pr-10 pl-4 bg-gray-50/60 border border-gray-200 focus:border-[#6320ee] rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:bg-white focus:ring-4 focus:ring-purple-100/40 transition-all duration-200"
+            />
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm group-focus-within:text-[#6320ee] transition-colors">🔍</span>
+          </div>
+
+          {showDropdown && (
+            <div className="absolute top-full mt-2 w-full bg-white border border-gray-100 rounded-xl shadow-xl shadow-purple-100/40 overflow-hidden flex flex-col z-50">
+              {isSearching ? (
+                <div className="p-4 text-center text-xs font-bold text-gray-400">در حال جستجو...</div>
+              ) : searchResults.length > 0 ? (
+                <>
+                  {searchResults.map((product) => (
+                    <Link
+                      key={product.id}
+                      to={`/product/${product.id}`}
+                      onClick={() => { setShowDropdown(false); setSearchQuery(''); }}
+                      className="p-3 border-b border-gray-50 hover:bg-purple-50/60 transition-colors flex flex-col gap-1 text-right"
+                    >
+                      <span className="text-xs font-black text-gray-900 line-clamp-1">{product.title}</span>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[10px] text-gray-400 font-medium">فروشنده: {product.seller?.fullName || 'ناشناس'}</span>
+                        <span className="text-[10px] font-black text-[#6d28d9]">{product.price.toLocaleString('en-US')} تومان</span>
+                      </div>
+                    </Link>
+                  ))}
+                </>
+              ) : (
+                <div className="p-4 text-center text-xs font-bold text-gray-400">محصولی با این نام پیدا نشد!</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Left Section: Context Responsive Auth Actions */}
+        <div className="flex items-center gap-2 md:gap-4">
+          <button 
+            onClick={() => setIsSearchBarOpen(!isSearchBarOpen)}
+            className="md:hidden p-2 text-gray-700 hover:text-[#6d28d9] hover:bg-purple-50 rounded-xl transition-all"
+            aria-label="Open Search"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+
+          {/* Render Component-Based Modular User Action Trigger Menu */}
+          <UserMenu user={user} onLogout={handleLogout} />
+        </div>
+
+      </div>
+
+      {/* Mobile Popover Overlay Full Width Search Interface */}
+      {isSearchBarOpen && (
+        <div className="absolute inset-x-0 top-0 bg-white p-4 shadow-md border-b border-purple-100 flex items-center gap-3 z-50 animate-in slide-in-from-top duration-200" ref={mobileSearchRef}>
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="چی میخوای؟ سرچ کن..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full py-2.5 pr-10 pl-4 bg-gray-50 border border-gray-200 focus:border-[#6320ee] rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
+              autoFocus
+            />
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          </div>
+          <button onClick={() => { setIsSearchBarOpen(false); setSearchQuery(''); }} className="p-2 text-gray-400 hover:text-gray-600 text-sm font-bold">بستن</button>
+
+          {searchQuery.trim().length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl overflow-hidden flex flex-col z-50 max-h-64 overflow-y-auto">
+              {isSearching ? (
+                <div className="p-4 text-center text-xs font-bold text-gray-400">در حال جستجو...</div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((product) => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    onClick={() => { setIsSearchBarOpen(false); setSearchQuery(''); }}
+                    className="p-3 border-b border-gray-50 hover:bg-purple-50 transition-colors flex flex-col gap-0.5 text-right"
+                  >
+                    <span className="text-xs font-black text-gray-900">{product.title}</span>
+                    <span className="text-[10px] font-black text-[#6d28d9] mt-1">{product.price.toLocaleString('en-US')} تومان</span>
+                  </Link>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs font-bold text-gray-400">نتیجه‌ای یافت نشد.</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Render Component-Based Isolated Mobile Drawer Portal */}
+      <MobileDrawer 
+        isOpen={isMenuOpen} 
+        onClose={() => setIsMenuOpen(false)} 
+        user={user} 
+        isActive={isActive} 
+      />
+    </header>
+  );
+}
+</file>
+
+<file path="frontend/src/pages/AdminDashboard.jsx">
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import AdminProductManagement from '../components/admin/AdminProductManagement';
+import AdminUserManagement from '../components/admin/AdminUserManagement';
+import InspectionModal from '../components/admin/InspectionModal';
+
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('pending');
+  const [pendingProducts, setPendingProducts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSilentUpdating, setIsSilentUpdating] = useState(false);
+  
+  const [inspectType, setInspectType] = useState(null);
+  const [inspectEntity, setInspectEntity] = useState(null);
+
+  const navigate = useNavigate();
+
+  const loadAdminData = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
+    else setIsSilentUpdating(true);
+
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${activeTab === 'pending' ? 'pending-products' : 'users'}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (activeTab === 'pending') setPendingProducts(data);
+        else if (activeTab === 'users') setUsers(data);
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setIsSilentUpdating(false);
+    }
+  };
+
+  useEffect(() => { loadAdminData(false); }, [activeTab]);
+
+  const handleVerify = async (productId, status) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ productId, status })
+    });
+    if (response.ok) loadAdminData(true);
+  };
+
+  const handleToggleBan = async (userId, isBanned) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ userId, isBanned })
+    });
+    if (response.ok) loadAdminData(true);
+  };
+
+  const handleRoleChange = async (userId, role) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ userId, role })
+    });
+    if (response.ok) loadAdminData(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-12">
+        
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">🛠️ لایه کنترلی پلتفرم ادمین</h1>
+            <p className="text-sm text-gray-500 mt-2 font-medium">نظارت کلی و اعمال سطوح دسترسی بر کالاها و اعضای سیستم</p>
+          </div>
+          {isSilentUpdating && (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-purple-50 text-purple-700 text-[10px] font-black rounded-full border border-purple-100/50 animate-pulse">
+              🔄 همگام‌سازی نامحسوس دیتابیس...
+            </div>
+          )}
+        </div>
+        
+        <div className="flex gap-2 border-b border-gray-200 my-6">
+          <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'pending' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>📦 مدیریت کالاها و دوره‌ها</button>
+          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'users' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>👥 نظارت کاربری و سطوح دسترسی</button>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs min-h-[400px]">
+          {isLoading ? (
+            <div className="flex flex-col justify-center items-center py-20 gap-3">
+              <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+              <p className="text-xs font-bold text-gray-400">در حال دریافت داده‌های امنیتی مدیریت...</p>
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-300">
+              {activeTab === 'pending' && <AdminProductManagement products={pendingProducts} onVerify={handleVerify} onInspect={(p) => { setInspectType('product'); setInspectEntity(p); }} />}
+              {activeTab === 'users' && <AdminUserManagement users={users} onToggleBan={handleToggleBan} onRoleChange={handleRoleChange} onInspect={(u) => { setInspectType('user'); setInspectEntity(u); }} />}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <InspectionModal isOpen={!!inspectEntity} onClose={() => { setInspectType(null); setInspectEntity(null); }} type={inspectType} entity={inspectEntity} />
+    </div>
+  );
+}
+</file>
+
 <file path="frontend/src/pages/Login.jsx">
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -2246,135 +3251,47 @@ export default function Login() {
 | Seyed Mahdi Mirmotahari | 402243106 |
 </file>
 
-<file path="backend/prisma/schema.prisma">
-// prisma/schema.prisma
+<file path="backend/controllers/productController.js">
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-generator client {
-  provider = "prisma-client-js"
-}
+// Public Action: Fetch marketplace approved item indexation structure
+const getAllPublicProducts = async (req, res) => {
+    try {
+        const { search } = req.query;
+        const products = await prisma.product.findMany({
+            where: {
+                status: 'APPROVED',
+                ...(search && {
+                    OR: [
+                        { title: { contains: search, mode: 'insensitive' } },
+                        { description: { contains: search, mode: 'insensitive' } }
+                    ]
+                })
+            },
+            include: {
+                seller: { select: { fullName: true, storeName: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error("Get All Public Products Catalog Error:", error);
+        res.status(500).json({ message: "Failed to fetch marketplace catalog database logs." });
+    }
+};
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+module.exports = { getAllPublicProducts };
+</file>
 
-// Enums definition
-enum Role {
-  BUYER
-  SELLER
-  ADMIN
-}
+<file path="backend/routes/productRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { getAllPublicProducts } = require('../controllers/productController');
 
-enum OrderStatus {
-  PENDING
-  COMPLETED
-  FAILED
-}
+router.get('/', getAllPublicProducts);
 
-model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  fullName  String    @default("")
-  password  String
-  role      Role      @default(BUYER)
-  
-  // New optional fields specifically for sellers
-  storeName String?
-  phone     String?
-  bio       String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  products  Product[] 
-  orders    Order[]   
-  reviews   Review[]
-}
-// Product Service Model
-model Product {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  price       Float
-  category    String    @default("General") // Added category field
-  sellerId    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
-  seller      User        @relation(fields: [sellerId], references: [id])
-  orderItems  OrderItem[]
-  licenses    License[]
-  reviews     Review[]
-}
-
-// Order Service Models
-model Order {
-  id            Int           @id @default(autoincrement())
-  buyerId       Int
-  totalAmount   Float
-  status        OrderStatus   @default(PENDING)
-  createdAt     DateTime      @default(now())
-
-  // Relations
-  buyer         User          @relation(fields: [buyerId], references: [id])
-  items         OrderItem[]
-  transaction   Transaction?
-}
-
-model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int
-  productId Int
-  price     Float
-
-  // Relations
-  order     Order    @relation(fields: [orderId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
-  license   License?
-}
-
-// License Service Model (Secure File Access)
-model License {
-  id          Int       @id @default(autoincrement())
-  licenseKey  String    @unique
-  productId   Int
-  orderItemId Int       @unique
-  isValid     Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-
-  // Relations
-  product     Product   @relation(fields: [productId], references: [id])
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
-}
-
-// Payment Service Model
-model Transaction {
-  id            Int       @id @default(autoincrement())
-  orderId       Int       @unique
-  amount        Float
-  paymentMethod String
-  status        String
-  createdAt     DateTime  @default(now())
-
-  // Relations
-  order         Order     @relation(fields: [orderId], references: [id])
-}
-
-// Review Service Model
-model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String?
-  userId    Int
-  productId Int
-  createdAt DateTime @default(now())
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
-}
+module.exports = router;
 </file>
 
 <file path="frontend/src/pages/Register.jsx">
@@ -2579,45 +3496,142 @@ export default function Register() {
 }
 </file>
 
-<file path="frontend/src/App.jsx">
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+<file path="frontend/src/pages/SellerDashboard.jsx">
+import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
+import EditProductModal from '../components/seller/EditProductModal';
+import CreateProductModal from '../components/seller/CreateProductModal';
+import SellerProducts from '../components/seller/SellerProducts';
+import SellerCustomers from '../components/seller/SellerCustomers';
 
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Marketplace from './pages/Marketplace';
-import ProductDetails from './pages/ProductDetails';
-import SellerDashboard from './pages/SellerDashboard';
+export default function SellerDashboard() {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeSubTab, setActiveSubTab] = useState('products'); 
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [message, setMessage] = useState('');
 
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/seller/analytics`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const resData = await response.json();
+        setData(resData);
+      }
+    } catch (error) {
+      console.error("Error fetching seller analytics:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-export default function App() {
+  useEffect(() => { fetchDashboardData(); }, []);
+
+  const handleCreateProduct = async (formData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/seller/product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        setIsCreateOpen(false);
+        setMessage('محصول جدید با موفقیت ثبت شد و در صف تایید مدیر قرار گرفت.');
+        setTimeout(() => setMessage(''), 4000);
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSaveProduct = async (formData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/seller/product-edit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        setEditingProduct(null);
+        setMessage('تغییرات با موفقیت ذخیره شد و محصول برای تایید مجدد به ادمین ارجاع داده شد.');
+        setTimeout(() => setMessage(''), 4000);
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (isLoading) return <div className="text-center py-24 text-sm font-bold text-gray-400">در حال دریافت داده‌های تحلیل فروشگاه...</div>;
+
   return (
-    // Setup the main router for navigating between different pages
-    <BrowserRouter>
-      <Routes>
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-12">
         
-        {/* Define the routes for the application */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Marketplace and Product Details routes */}
-        <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/product/:id" element={<ProductDetails />} />
-        
-        {/* Fallback route for undefined paths (404 Not Found) */}
-        <Route path="*" element={
-          <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]">
-            <h1 className="text-5xl font-black mb-2 text-[#6d28d9]">404</h1>
-            <p className="text-gray-500 font-medium text-sm">صفحه مورد نظر در بازارچه یافت نشد!</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">🚀 پنل عملکرد فروشندگان</h1>
+            <p className="text-sm text-gray-500 mt-2 font-medium">پایش آنلاین درآمد، مدیریت محصولات، تعامل با خریداران و بازخوردها</p>
           </div>
-        } />
+          <button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto px-6 py-3 bg-[#6320ee] hover:bg-[#5116c7] text-white font-black rounded-xl text-xs transition-all cursor-pointer shadow-md active:scale-95">➕ ثبت محصول / دوره جدید</button>
+        </div>
 
-        <Route path="/seller/dashboard" element={<SellerDashboard />} />
-        
-      </Routes>
-    </BrowserRouter>
+        {message && <div className="mb-6 p-4 bg-green-50 border border-green-100 text-green-700 text-xs font-black rounded-xl">{message}</div>}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs"><p className="text-xs font-bold text-gray-400">💰 درآمد ناخالص فروشگاه</p><p className="text-2xl font-black text-purple-600 mt-2">{data?.totalEarnings.toLocaleString('en-US')} تومان</p></div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs"><p className="text-xs font-bold text-gray-400">📦 کل فروش موفق</p><p className="text-2xl font-black text-gray-900 mt-2">{data?.totalSales} تراکنش</p></div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs"><p className="text-xs font-bold text-gray-400">📚 محصولات عرضه شده</p><p className="text-2xl font-black text-gray-900 mt-2">{data?.productsCount} آیتم</p></div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xs mb-8">
+          <h3 className="text-xs font-black text-gray-400 mb-6">📈 نمودار تحلیل ماهیانه درآمد</h3>
+          <div className="flex items-end justify-between h-36 pt-4 px-4 border-b border-gray-100">
+            {data?.monthlyData.map((d, i) => (
+              <div key={i} className="flex flex-col items-center w-1/4 group relative">
+                <div className="bg-gradient-to-t from-[#6320ee] to-[#863bff] w-10 rounded-t-xl transition-all duration-300 shadow-sm" style={{ height: `${Math.max((d.earnings / (data.totalEarnings || 1)) * 120, 20)}px` }} />
+                <span className="text-[10px] font-black text-gray-500 mt-3">{d.month}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-2 border-b border-gray-200 mb-6 overflow-x-auto">
+          <button onClick={() => setActiveSubTab('products')} className={`px-4 py-2.5 text-xs font-black rounded-t-xl border-b-2 cursor-pointer transition-all ${activeSubTab === 'products' ? 'border-[#6320ee] text-[#6320ee] bg-purple-50/40' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>📦 مدیریت محصولات و دوره‌ها</button>
+          <button onClick={() => setActiveSubTab('customers')} className={`px-4 py-2.5 text-xs font-black rounded-t-xl border-b-2 cursor-pointer transition-all ${activeSubTab === 'customers' ? 'border-[#6320ee] text-[#6320ee] bg-purple-50/40' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>👥 لیست خریداران ({data?.customers.length})</button>
+          <button onClick={() => setActiveSubTab('reviews')} className={`px-4 py-2.5 text-xs font-black rounded-t-xl border-b-2 cursor-pointer transition-all ${activeSubTab === 'reviews' ? 'border-[#6320ee] text-[#6320ee] bg-purple-50/40' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>💬 نظرات و بازخوردها ({data?.recentReviews.length})</button>
+        </div>
+
+        <div className="min-h-[250px]">
+          {activeSubTab === 'products' && <SellerProducts products={data?.products || []} onEdit={setEditingProduct} />}
+          {activeSubTab === 'customers' && <SellerCustomers customers={data?.customers || []} />}
+          {activeSubTab === 'reviews' && (
+            <div className="space-y-4">
+              {data?.recentReviews.length > 0 ? data.recentReviews.map(r => (
+                <div key={r.id} className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xs text-right animate-in fade-in duration-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-black text-gray-900">{r.buyerName} <span className="text-[10px] text-gray-400 font-bold">برای کالا ({r.productTitle})</span></span>
+                    <span className="text-xs text-amber-500 font-black">⭐ {r.rating} / ۵</span>
+                  </div>
+                  <p className="text-xs font-medium text-gray-600 mt-2">{r.comment || 'بدون متن توضیحات.'}</p>
+                </div>
+              )) : <p className="text-center py-10 text-xs text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">هیچ بازخوردی ثبت نشده است.</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {editingProduct && <EditProductModal isOpen={!!editingProduct} onClose={() => setEditingProduct(null)} product={editingProduct} onSave={handleSaveProduct} />}
+      {isCreateOpen && <CreateProductModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSave={handleCreateProduct} />}
+    </div>
   );
 }
 </file>
@@ -2737,6 +3751,165 @@ const loginUser = async (req, res) => {
 module.exports = { registerUser, loginUser };
 </file>
 
+<file path="backend/prisma/schema.prisma">
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PlanDuration {
+  MONTHLY
+  THREE_MONTHS
+  YEARLY
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  email            String             @unique
+  fullName         String             @default("")
+  password         String
+  role             Role               @default(BUYER)
+  isBanned         Boolean            @default(false) // Tracks account suspension status
+  storeName        String?
+  phone            String?
+  bio              String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  products         Product[] 
+  orders           Order[]   
+  reviews          Review[]
+  subscriptions    UserSubscription[]
+}
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  category    String        @default("General") // Expected values: 'Course', 'Book', 'License'
+  fileUrl     String        @default("")        // Used for Book downloads or stream link references
+  status      ProductStatus @default(PENDING)   
+  sellerId    Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  seller      User          @relation(fields: [sellerId], references: [id])
+  orderItems  OrderItem[]
+  licenses    License[]
+  reviews     Review[]
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  buyerId       Int
+  totalAmount   Float
+  status        OrderStatus   @default(PENDING)
+  createdAt     DateTime      @default(now())
+
+  buyer         User          @relation(fields: [buyerId], references: [id])
+  items         OrderItem[]
+  transaction   Transaction?
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  price     Float
+
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  license   License?
+}
+
+model SubscriptionPlan {
+  id          Int                @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  duration    PlanDuration       @default(MONTHLY)
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  
+  subscriptions UserSubscription[]
+}
+
+model UserSubscription {
+  id                 Int              @id @default(autoincrement())
+  userId             Int
+  subscriptionPlanId Int
+  startDate          DateTime         @default(now())
+  endDate            DateTime
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  user               User             @relation(fields: [userId], references: [id])
+  plan               SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+}
+
+model License {
+  id            Int       @id @default(autoincrement())
+  licenseKey    String    @unique
+  productId     Int
+  orderItemId   Int       @unique
+  downloadCount Int       @default(0)  // Applicable only to downloaded books/software keys
+  expiresAt     DateTime?              
+  isValid       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  product       Product   @relation(fields: [productId], references: [id])
+  orderItem     OrderItem @relation(fields: [orderItemId], references: [id])
+}
+
+model Transaction {
+  id            Int       @id @default(autoincrement())
+  orderId       Int       @unique
+  amount        Float
+  paymentMethod String
+  status        String
+  createdAt     DateTime  @default(now())
+
+  order         Order     @relation(fields: [orderId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+</file>
+
 <file path="backend/package.json">
 {
   "name": "backend",
@@ -2763,7 +3936,49 @@ module.exports = { registerUser, loginUser };
     "nodemon": "^3.1.14",
     "prisma": "^6.19.3",
     "supertest": "^7.2.2"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
+}
+</file>
+
+<file path="frontend/src/App.jsx">
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Marketplace from './pages/Marketplace';
+import ProductDetails from './pages/ProductDetails';
+import SellerDashboard from './pages/SellerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
+        
+        <Route path="/seller/dashboard" element={<SellerDashboard />} />
+        
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+        <Route path="*" element={
+          <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+            <h1 className="text-5xl font-black mb-2 text-[#6d28d9]">۴۰۴</h1>
+            <p className="text-gray-500 font-medium text-sm">صفحه مورد نظر در بازارچه یافت نشد!</p>
+          </div>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 </file>
 
@@ -2772,37 +3987,34 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-// 1. Import route files
 const authRouter = require('./routes/authRoutes');
 const productRouter = require('./routes/productRoutes');
-const orderRouter = require('./routes/orderRoutes');
-const dashboardRouter = require('./routes/dashboardRoutes');
+const sellerRouter = require('./routes/sellerRoutes');
+const buyerRouter = require('./routes/buyerRoutes');
+const adminRouter = require('./routes/adminRoutes');
 
 const app = express();
 
-// 2. Middlewares
-app.use(cors()); // Allow frontend to connect to this server
-app.use(express.json()); // Parse incoming JSON payloads
+app.use(cors()); 
+app.use(express.json()); 
 
-// 3. Register routes
-app.use('/api/auth', authRouter); // Map all /api/auth requests to authRouter
-app.use('/api/products', productRouter); // Map all /api/products requests to productRouter
-app.use('/api/orders', orderRouter); // Map all /api/orders requests to orderRouter
-app.use('/api/dashboard', dashboardRouter); // Map all /api/dashboard requests to dashboardRouter
+app.use('/api/auth', authRouter); 
+app.use('/api/products', productRouter); 
+app.use('/api/seller', sellerRouter);
+app.use('/api/buyer', buyerRouter);
+app.use('/api/admin', adminRouter); 
 
-// Test API (GET method)
 app.get('/api/status', (req, res) => {
-    res.json({ message: "Backend server is connected and ready! 🚀" });
+    res.json({ message: "System core refactored layout connected! 🚀" });
 });
 
-// 4. Server configuration
-// Only listen to the port if we are NOT running tests
+const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'test') {
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 }
 
-// Export the app so Supertest can use it
 module.exports = app;
 </file>
 

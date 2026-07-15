@@ -17,13 +17,18 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
 
+  // Load administrative workspace context smoothly from DB
   const loadAdminData = async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     else setIsSilentUpdating(true);
 
     const token = localStorage.getItem('token');
+    
+    // Dynamically query target endpoints based on the active UI tab selection state
+    const endpointPath = activeTab === 'pending' ? 'products' : 'users';
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${activeTab === 'pending' ? 'pending-products' : 'users'}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${endpointPath}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -43,34 +48,49 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadAdminData(false); }, [activeTab]);
 
+  // Execute product verification with safe error handling
   const handleVerify = async (productId, status) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ productId, status })
-    });
-    if (response.ok) loadAdminData(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ productId, status })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+      console.error("Verification failed:", error);
+    }
   };
 
+  // Execute user ban toggle with safe error handling
   const handleToggleBan = async (userId, isBanned) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ userId, isBanned })
-    });
-    if (response.ok) loadAdminData(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, isBanned })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+      console.error("Ban toggle failed:", error);
+    }
   };
 
+  // Execute role mutation with safe error handling
   const handleRoleChange = async (userId, role) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ userId, role })
-    });
-    if (response.ok) loadAdminData(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, role })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+       console.error("Role change failed:", error);
+    }
   };
 
   return (

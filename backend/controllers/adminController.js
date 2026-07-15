@@ -1,7 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const getPendingProducts = async (req, res) => {
+// Fetch all products with seller details for the admin review panel
+const getAdminProducts = async (req, res) => {
     try {
         const products = await prisma.product.findMany({
             include: {
@@ -16,6 +17,7 @@ const getPendingProducts = async (req, res) => {
     }
 };
 
+// Handle product approval or rejection status updates
 const verifyProduct = async (req, res) => {
     try {
         const { productId, status } = req.body;
@@ -36,6 +38,7 @@ const verifyProduct = async (req, res) => {
     }
 };
 
+// Retrieve all registered platform users for admin controls
 const getAllUsers = async (req, res) => {
     try {
         const users = await prisma.user.findMany({
@@ -49,6 +52,7 @@ const getAllUsers = async (req, res) => {
     }
 };
 
+// Toggle suspension and ban restriction state on any user account
 const toggleUserBan = async (req, res) => {
     try {
         const { userId, isBanned } = req.body;
@@ -65,6 +69,7 @@ const toggleUserBan = async (req, res) => {
     }
 };
 
+// Mutate and update user roles globally within the platform system
 const updateUserRole = async (req, res) => {
     try {
         const { userId, role } = req.body;
@@ -85,6 +90,7 @@ const updateUserRole = async (req, res) => {
     }
 };
 
+// Fetch comprehensive financial transaction logs across the shop system
 const getAllTransactions = async (req, res) => {
     try {
         const transactions = await prisma.transaction.findMany({
@@ -100,4 +106,11 @@ const getAllTransactions = async (req, res) => {
     }
 };
 
-module.exports = { getPendingProducts, verifyProduct, getAllUsers, toggleUserBan, updateUserRole, getAllTransactions };
+module.exports = { 
+    getAdminProducts, 
+    verifyProduct, 
+    getAllUsers, 
+    toggleUserBan, 
+    updateUserRole, 
+    getAllTransactions 
+};

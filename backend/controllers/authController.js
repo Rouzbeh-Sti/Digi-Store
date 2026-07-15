@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Register a new user and handle extra fields for sellers
 const registerUser = async (req, res) => {
     try {
-        // Extract all fields from request body including the new seller ones
         const { email, password, fullName, role, storeName, phone, bio } = req.body;
 
         if (!email || !password || !fullName) {
@@ -23,7 +22,6 @@ const registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create the user and inject the optional seller details if they exist
         const newUser = await prisma.user.create({
             data: {
                 email: email,
@@ -60,6 +58,7 @@ const registerUser = async (req, res) => {
     }
 };
 
+// Login user with ban check and role routing
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -74,6 +73,11 @@ const loginUser = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({ message: "ایمیل یا رمز عبور اشتباه است." });
+        }
+
+        // Check if the user is banned before checking passwords
+        if (user.isBanned) {
+            return res.status(403).json({ message: "حساب کاربری شما توسط مدیریت مسدود شده است." });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
