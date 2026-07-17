@@ -51,23 +51,29 @@ model User {
   reviews          Review[]
   subscriptions    UserSubscription[]
 }
-
 model Product {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String?
-  price       Float
-  category    String        @default("General") // Expected values: 'Course', 'Book', 'License'
-  fileUrl     String        @default("")        // Used for Book downloads or stream link references
-  status      ProductStatus @default(PENDING)   
-  sellerId    Int
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                Int           @id @default(autoincrement())
+  title             String
+  description       String?
+  price             Float
+  category          String        @default("General") // Expected values: 'Course', 'Book', 'License'
+  fileUrl           String        @default("")        // Used for Book downloads or stream link references
+  status            ProductStatus @default(PENDING)   
+  sellerId          Int
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  seller      User          @relation(fields: [sellerId], references: [id])
-  orderItems  OrderItem[]
-  licenses    License[]
-  reviews     Review[]
+  // Subscription setting (Only applicable to 'Course' category)
+  allowSubscription Boolean       @default(true)
+
+  // Cached fields for fast query sorting and "Top Products" displays
+  averageRating     Float         @default(0.0)
+  reviewCount       Int           @default(0)
+
+  seller            User          @relation(fields: [sellerId], references: [id])
+  orderItems        OrderItem[]
+  licenses          License[]
+  reviews           Review[]
 }
 
 model Order {
@@ -146,7 +152,7 @@ model Transaction {
 
 model Review {
   id        Int      @id @default(autoincrement())
-  rating    Int
+  rating    Int      // Stars from 1 to 5
   comment   String?
   userId    Int
   productId Int
@@ -154,4 +160,7 @@ model Review {
 
   user      User     @relation(fields: [userId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
+
+  // Prevent a user from leaving multiple reviews on the same product
+  @@unique([userId, productId])
 }

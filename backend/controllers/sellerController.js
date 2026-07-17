@@ -1,10 +1,12 @@
+// File: backend/controllers/sellerController.js
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Create any digital product (Course, Book, or License)
 const createProduct = async (req, res) => {
     try {
-        const { title, description, price, category, fileUrl } = req.body;
+        const { title, description, price, category, fileUrl, allowSubscription } = req.body;
         const sellerId = req.user.userId;
 
         if (!title || !price || !category) {
@@ -23,7 +25,9 @@ const createProduct = async (req, res) => {
                 category,
                 fileUrl: category === 'License' ? '' : fileUrl,
                 status: 'PENDING',
-                sellerId: sellerId
+                sellerId: sellerId,
+                // Only allow subscription flag if the category is Course
+                allowSubscription: category === 'Course' ? Boolean(allowSubscription) : false
             }
         });
 
@@ -97,7 +101,16 @@ const getSellerAnalytics = async (req, res) => {
             productsCount: products.length,
             totalEarnings,
             totalSales,
-            products: products.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category, status: p.status, description: p.description, fileUrl: p.fileUrl })),
+            products: products.map(p => ({ 
+                id: p.id, 
+                title: p.title, 
+                price: p.price, 
+                category: p.category, 
+                status: p.status, 
+                description: p.description, 
+                fileUrl: p.fileUrl,
+                allowSubscription: p.allowSubscription
+            })),
             customers: Array.from(customersMap.values()),
             recentReviews: recentReviews.slice(0, 5),
             monthlyData
@@ -111,7 +124,7 @@ const getSellerAnalytics = async (req, res) => {
 // Modify product properties
 const updateProduct = async (req, res) => {
     try {
-        const { productId, title, description, price, category } = req.body;
+        const { productId, title, description, price, category, allowSubscription } = req.body;
         const sellerId = req.user.userId;
 
         const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
@@ -127,7 +140,8 @@ const updateProduct = async (req, res) => {
                 description,
                 price: parseFloat(price),
                 category,
-                status: 'PENDING'
+                status: 'PENDING',
+                allowSubscription: category === 'Course' ? Boolean(allowSubscription) : false
             }
         });
 

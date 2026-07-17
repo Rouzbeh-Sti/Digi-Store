@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
 export default function BuyerDashboard() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
       const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
 
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/my-orders`, {
@@ -22,7 +16,6 @@ export default function BuyerDashboard() {
 
         if (response.ok) {
           const data = await response.json();
-          // Filter only completed orders to show active products
           setOrders(data.filter(o => o.status === 'COMPLETED'));
         }
       } catch (error) {
@@ -33,7 +26,7 @@ export default function BuyerDashboard() {
     };
 
     fetchOrders();
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>

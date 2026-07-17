@@ -52,6 +52,7 @@ backend/
     orderController.js
     productController.js
     sellerController.js
+    userController.js
   middleware/
     authMiddleware.js
   prisma/
@@ -68,6 +69,8 @@ backend/
         migration.sql
       20260713173239_add_user_banned_status/
         migration.sql
+      20260715165802_add_authority_transaction/
+        migration.sql
       migration_lock.toml
     schema.prisma
     seed.js
@@ -78,6 +81,7 @@ backend/
     orderRoutes.js
     productRoutes.js
     sellerRoutes.js
+    userRoutes.js
   tests/
     order.test.js
     product.test.js
@@ -105,6 +109,7 @@ frontend/
         SellerCustomers.jsx
         SellerProducts.jsx
       AuthLayout.jsx
+      Footer.jsx
       Hero.jsx
       MobileDrawer.jsx
       Navbar.jsx
@@ -112,14 +117,20 @@ frontend/
       SellerCTA.jsx
       SharedCustomTable.jsx
       UserMenu.jsx
+    context/
+      CartContext.jsx
     pages/
       AdminDashboard.jsx
+      BuyerDashboard.jsx
+      Cart.jsx
       Home.jsx
       Login.jsx
       Marketplace.jsx
+      PaymentResult.jsx
       ProductDetails.jsx
       Register.jsx
       SellerDashboard.jsx
+      Settings.jsx
     App.css
     App.jsx
     index.css
@@ -130,12 +141,149 @@ frontend/
   package.json
   README.md
   vite.config.js
+Phase3-C4s/
+  Level1-code.puml
+  Level1.png
+  Level2-code.puml
+  Level2.png
 README.md
 System texture diagram.pdf
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="frontend/src/components/Footer.jsx">
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+export default function Footer() {
+  return (
+    <footer className="w-full bg-[#0b0a1a] text-gray-400 border-t border-purple-950/40 pt-16 pb-8 relative overflow-hidden z-10">
+      {/* Background Decorative Glow */}
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 mb-12 text-right">
+        
+        {/* Column 1: Brand and Bio */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 justify-start">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#6320ee] to-[#863bff] rounded-xl flex items-center justify-center shadow-lg shadow-purple-900/30">
+              <span className="text-white font-black text-lg leading-none">D</span>
+            </div>
+            <span className="text-xl font-black tracking-tight text-white">
+              DigiStore
+            </span>
+          </div>
+          <p className="text-xs font-medium text-gray-500 leading-relaxed">
+            بزرگ‌ترین بازارچه تخصصی چندفروشندگی جهت عرضه، خرید و تحویل آنی لایسنس‌های نرم‌افزاری، اشتراک پلتفرم‌های بین‌المللی و دوره‌های آموزشی ویدئویی تحت نظارت دپارتمان مهندسی نرم‌افزار.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">✈️</span>
+            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">📸</span>
+            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">💻</span>
+          </div>
+        </div>
+
+        {/* Column 2: Quick Links */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
+            ناوبری بازارچه
+          </h4>
+          <ul className="space-y-2.5 text-xs font-bold">
+            <li>
+              <Link to="/marketplace" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>🏪</span> بازارچه محصولات دیجیتال
+              </Link>
+            </li>
+            <li>
+              <Link to="/cart" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>🛒</span> سبد خرید و فاکتور
+              </Link>
+            </li>
+            <li>
+              <Link to="/buyer/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>📚</span> کتابخانه و لایسنس‌های من
+              </Link>
+            </li>
+            <li>
+              <Link to="/settings" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>⚙️</span> تنظیمات حساب کاربری
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Column 3: Dashboards & Roles */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
+            سطوح دسترسی سیستم
+          </h4>
+          <ul className="space-y-2.5 text-xs font-bold">
+            <li>
+              <Link to="/seller/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>📈</span> پنل مدیریت فروشندگان
+              </Link>
+            </li>
+            <li>
+              <Link to="/admin/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>🛠️</span> لایه کنترلی و ادمین ارشد
+              </Link>
+            </li>
+            <li>
+              <Link to="/register?role=SELLER" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>👨‍🏫</span> ثبت‌نام مدرسان / تأمین‌کنندگان
+              </Link>
+            </li>
+            <li>
+              <span className="text-gray-600 flex items-center gap-1.5 cursor-not-allowed">
+                <span>🛡️</span> مستندات API پلتفرم (بزودی)
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Column 4: Development Team (SBU) */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
+            تیم مهندسی نرم‌افزار SBU
+          </h4>
+          <ul className="space-y-2 text-[11px] font-semibold text-gray-500">
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">روزبه سلطانی</span>
+              <span className="font-mono text-[10px] text-purple-400">402243072</span>
+            </li>
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">عرفان پنجه‌شاهی</span>
+              <span className="font-mono text-[10px] text-purple-400">402243046</span>
+            </li>
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">ماهان بانشی</span>
+              <span className="font-mono text-[10px] text-purple-400">402243042</span>
+            </li>
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">سید مهدی میرمطهری</span>
+              <span className="font-mono text-[10px] text-purple-400">402243106</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      {/* Bottom Copyright Strip */}
+      <div className="max-w-6xl mx-auto px-6 pt-8 border-t border-purple-950/40 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-right">
+        <p className="text-[10px] font-bold text-gray-600">
+          این پروژه به عنوان مستند نهایی فاز سوم درس مهندسی نرم‌افزار دانشگاه شهید بهشتی (SBU) توسعه یافته است.
+        </p>
+        <p className="text-[10px] font-black text-gray-500 tracking-wide font-mono">
+          &copy; 2026 DigiStore Platform. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  );
+}
+</file>
 
 <file path=".github/workflows/ci.yml">
 name: Backend CI Pipeline
@@ -244,6 +392,72 @@ const downloadSecureProduct = async (req, res) => {
 };
 
 module.exports = { getBuyerDashboard, downloadSecureProduct };
+</file>
+
+<file path="backend/controllers/userController.js">
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
+const prisma = new PrismaClient();
+
+// Update basic user profile information
+const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { fullName, storeName, phone, bio } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { 
+                fullName,
+                ...(req.user.role === 'SELLER' && { storeName, phone, bio })
+            }
+        });
+
+        // Strip password before returning
+        const { password, ...safeUser } = updatedUser;
+
+        res.status(200).json({ 
+            message: "اطلاعات پروفایل با موفقیت بروزرسانی شد.", 
+            user: safeUser 
+        });
+    } catch (error) {
+        console.error("Profile Update Error:", error);
+        res.status(500).json({ message: "خطا در ثبت تغییرات. لطفا مجددا تلاش کنید." });
+    }
+};
+
+// Secure password change functionality
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: "وارد کردن رمز عبور فعلی و جدید الزامی است." });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: "رمز عبور فعلی اشتباه است." });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword }
+        });
+
+        res.status(200).json({ message: "رمز عبور شما با موفقیت تغییر کرد." });
+    } catch (error) {
+        console.error("Password Change Error:", error);
+        res.status(500).json({ message: "خطا در تغییر رمز عبور سیستم." });
+    }
+};
+
+module.exports = { updateProfile, changePassword };
 </file>
 
 <file path="backend/prisma/migrations/20260611101624_init_digital_store/migration.sql">
@@ -445,28 +659,24 @@ ALTER TABLE "UserSubscription" ADD CONSTRAINT "UserSubscription_subscriptionPlan
 ALTER TABLE "User" ADD COLUMN     "isBanned" BOOLEAN NOT NULL DEFAULT false;
 </file>
 
+<file path="backend/prisma/migrations/20260715165802_add_authority_transaction/migration.sql">
+/*
+  Warnings:
+
+  - A unique constraint covering the columns `[authority]` on the table `Transaction` will be added. If there are existing duplicate values, this will fail.
+
+*/
+-- AlterTable
+ALTER TABLE "Transaction" ADD COLUMN     "authority" TEXT;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Transaction_authority_key" ON "Transaction"("authority");
+</file>
+
 <file path="backend/prisma/migrations/migration_lock.toml">
 # Please do not edit this file manually
 # It should be added in your version-control system (e.g., Git)
 provider = "postgresql"
-</file>
-
-<file path="backend/routes/adminRoutes.js">
-const express = require('express');
-const router = express.Router();
-const { getPendingProducts, verifyProduct, getAllUsers, toggleUserBan, updateUserRole, getAllTransactions } = require('../controllers/adminController');
-const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
-
-router.use(verifyToken, isAdmin);
-
-router.get('/pending-products', getPendingProducts);
-router.post('/verify-product', verifyProduct);
-router.get('/users', getAllUsers);
-router.post('/user-ban', toggleUserBan);
-router.post('/user-role', updateUserRole);
-router.get('/transactions', getAllTransactions);
-
-module.exports = router;
 </file>
 
 <file path="backend/routes/authRoutes.js">
@@ -496,30 +706,17 @@ router.get('/download/:licenseKey', downloadSecureProduct);
 module.exports = router;
 </file>
 
-<file path="backend/routes/orderRoutes.js">
+<file path="backend/routes/userRoutes.js">
 const express = require('express');
 const router = express.Router();
-const { createOrder, getMyOrders } = require('../controllers/orderController');
+const { updateProfile, changePassword } = require('../controllers/userController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-// Protected routes: Only logged-in users can purchase and view their orders
-router.post('/checkout', verifyToken, createOrder);
-router.get('/my-orders', verifyToken, getMyOrders);
+// All user routes require authentication
+router.use(verifyToken);
 
-module.exports = router;
-</file>
-
-<file path="backend/routes/sellerRoutes.js">
-const express = require('express');
-const router = express.Router();
-const { sellerCreateProduct, getSellerAnalytics, updateSellerProduct } = require('../controllers/sellerController');
-const { verifyToken, isSeller } = require('../middleware/authMiddleware');
-
-router.use(verifyToken, isSeller);
-
-router.post('/product', sellerCreateProduct);
-router.get('/analytics', getSellerAnalytics);
-router.put('/product-edit', updateSellerProduct);
+router.put('/profile', updateProfile);
+router.put('/password', changePassword);
 
 module.exports = router;
 </file>
@@ -716,63 +913,6 @@ export default defineConfig({
 });
 </file>
 
-<file path="frontend/src/components/admin/AdminProductManagement.jsx">
-import React, { useState, useRef, useEffect } from 'react';
-import SharedCustomTable from '../SharedCustomTable';
-
-export default function AdminProductManagement({ products, onVerify, onInspect }) {
-  const [activeMenu, setActiveMenu] = useState(null);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const headers = ["نام محصول / دوره", "نوع کالا", "قیمت پایه", "وضعیت بررسی", "اقدامات مدیریتی"];
-
-  const sortableFields = {
-    0: 'title',
-    2: 'price',
-    3: 'status'
-  };
-
-  const renderRowCells = (p) => [
-    <span className="text-xs font-black text-gray-900">{p.title}</span>,
-    <span className="text-xs font-bold text-gray-500">
-      {p.category === 'Course' ? '📚 دوره آموزشی' : p.category === 'Book' ? '📄 کتاب / PDF' : '🔑 لایسنس'}
-    </span>,
-    <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
-    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
-      p.status === 'APPROVED' ? 'bg-green-50 text-green-600 border border-green-100' :
-      p.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
-    }`}>
-      {p.status === 'APPROVED' ? 'منتشر شده' : p.status === 'REJECTED' ? 'رد شده' : 'در انتظار بررسی'}
-    </span>,
-    <div className="relative text-center action-gate">
-      <button 
-        onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === p.id ? null : p.id); }}
-        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] border border-purple-100/60 rounded-xl text-[11px] font-black shadow-xs hover:from-[#6320ee] hover:to-[#863bff] hover:text-white transition-all duration-300 active:scale-95 cursor-pointer"
-      >
-        ⚙️ عملیات
-      </button>
-      {activeMenu === p.id && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-44 bg-white border border-purple-100/80 shadow-2xl rounded-2xl z-50 p-1.5 flex flex-col gap-0.5 text-right transform origin-top transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
-          <button onClick={() => { setActiveMenu(null); onInspect(p); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-purple-50 text-purple-700 rounded-xl transition-all cursor-pointer">🔍 بازرسی کامل محتوا</button>
-          {p.status !== 'APPROVED' && <button onClick={() => { setActiveMenu(null); onVerify(p.id, 'APPROVED'); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-green-50 text-green-600 rounded-xl transition-all cursor-pointer">✅ تایید و انتشار عمومی</button>}
-          {p.status !== 'REJECTED' && <button onClick={() => { setActiveMenu(null); onVerify(p.id, 'REJECTED'); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-red-50 text-red-600 rounded-xl transition-all cursor-pointer">🚫 لغو انتشار و رد کالا</button>}
-        </div>
-      )}
-    </div>
-  ];
-
-  return <div ref={menuRef}><SharedCustomTable headers={headers} rows={products} renderRowCells={renderRowCells} sortableFields={sortableFields} /></div>;
-}
-</file>
-
 <file path="frontend/src/components/admin/AdminUserManagement.jsx">
 import React, { useState, useRef, useEffect } from 'react';
 import SharedCustomTable from '../SharedCustomTable';
@@ -929,165 +1069,6 @@ export default function InspectionModal({ isOpen, onClose, type, entity }) {
 }
 </file>
 
-<file path="frontend/src/components/seller/CreateProductModal.jsx">
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-
-export default function CreateProductModal({ isOpen, onClose, onSave }) {
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('Course'); 
-  const [fileUrl, setFileUrl] = useState('');
-  const [description, setDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    await onSave({
-      title,
-      price: parseFloat(price),
-      category,
-      fileUrl: category === 'License' ? '' : fileUrl,
-      description
-    });
-
-    setTitle('');
-    setPrice('');
-    setCategory('Course');
-    setFileUrl('');
-    setDescription('');
-    setIsSubmitting(false);
-  };
-
-  return createPortal(
-    <>
-      <div 
-        onClick={() => !isSubmitting && onClose()} 
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
-      />
-      <div 
-        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
-        style={{ direction: 'rtl' }}
-      >
-        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
-          <h3 className="text-base font-black text-gray-900">➕ ثبت و انتشار کالا یا دوره جدید</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان یا نام محصول</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: آموزش پیشرفته ری‌اکت یا لایسنس ویندوز ۱۱" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">نوع محصول دیجیتال</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer">
-              <option value="Course">📚 دوره آموزشی (پخش آنلاین ویدیو)</option>
-              <option value="Book">📄 کتاب دیجیتال / فایل چاپی (PDF / ZIP)</option>
-              <option value="License">🔑 لایسنس اختصاصی نرم‌افزار / کد فعال‌سازی</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت پایه (تومان)</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-
-          {category !== 'License' && (
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-2">
-                {category === 'Course' ? '🔗 لینک استریم ویدیوها' : '🔗 آدرس امن دانلود فایل'}
-              </label>
-              <input type="url" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://storage.digistore.com/..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی کالا</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="سرفصل‌ها یا مشخصات فنی فایل را وارد کنید..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
-          </div>
-
-          <div className="pt-4 flex gap-3">
-            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
-              {isSubmitting ? 'در حال ارسال درخواست...' : 'ارسال کالا جهت بررسی و تایید مدیر'}
-            </button>
-            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
-          </div>
-        </form>
-      </div>
-    </>,
-    document.body
-  );
-}
-</file>
-
-<file path="frontend/src/components/seller/EditProductModal.jsx">
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-
-export default function EditProductModal({ isOpen, onClose, product, onSave }) {
-  const [title, setTitle] = useState(product?.title || '');
-  const [price, setPrice] = useState(product?.price || '');
-  const [category, setCategory] = useState(product?.category || 'Course');
-  const [description, setDescription] = useState(product?.description || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    await onSave({ productId: product.id, title, price: parseFloat(price), category, description });
-    setIsSubmitting(false);
-  };
-
-  return createPortal(
-    <>
-      <div 
-        onClick={() => !isSubmitting && onClose()} 
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
-      />
-      <div 
-        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
-        style={{ direction: 'rtl' }}
-      >
-        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
-          <h3 className="text-base font-black text-gray-900">✏️ ویرایش مشخصات محصول</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان محصول</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت (تومان)</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
-          </div>
-          <div className="pt-4 flex gap-3">
-            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
-              {isSubmitting ? 'در حال ذخیره‌سازی...' : 'اعمال تغییرات و بررسی مجدد'}
-            </button>
-            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
-          </div>
-        </form>
-      </div>
-    </>,
-    document.body
-  );
-}
-</file>
-
 <file path="frontend/src/components/seller/SellerCustomers.jsx">
 import React from 'react';
 import SharedCustomTable from '../SharedCustomTable';
@@ -1108,45 +1089,6 @@ export default function SellerCustomers({ customers }) {
   ];
 
   return <SharedCustomTable headers={headers} rows={customers} renderRowCells={renderRowCells} sortableFields={sortableFields} />;
-}
-</file>
-
-<file path="frontend/src/components/seller/SellerProducts.jsx">
-import React from 'react';
-import SharedCustomTable from '../SharedCustomTable';
-
-export default function SellerProducts({ products, onEdit }) {
-  const headers = ["نام محصول / دوره", "نوع کالا", "قیمت پایه", "وضعیت تایید", "عملیات"];
-
-  const sortableFields = {
-    0: 'title',
-    2: 'price',
-    3: 'status'
-  };
-
-  const renderRowCells = (p) => [
-    <span className="text-xs font-black text-gray-900">{p.title}</span>,
-    <span className="text-xs font-bold text-gray-500">
-      {p.category === 'Course' ? '📚 دوره آموزشی' : p.category === 'Book' ? '📄 کتاب / PDF' : '🔑 لایسنس'}
-    </span>,
-    <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
-    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
-      p.status === 'APPROVED' ? 'bg-green-50 text-green-600 border border-green-100' : 
-      p.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
-    }`}>
-      {p.status === 'APPROVED' ? 'تایید شده' : p.status === 'REJECTED' ? 'رد شده' : 'در انتظار بررسی'}
-    </span>,
-    <div className="text-center">
-      <button 
-        onClick={() => onEdit(p)} 
-        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] hover:from-[#6320ee] hover:to-[#863bff] hover:text-white border border-purple-100/60 rounded-xl text-xs font-black shadow-xs transition-all duration-300 active:scale-95 cursor-pointer"
-      >
-        ✏️ ویرایش محتوا
-      </button>
-    </div>
-  ];
-
-  return <SharedCustomTable headers={headers} rows={products} renderRowCells={renderRowCells} sortableFields={sortableFields} />;
 }
 </file>
 
@@ -1373,77 +1315,169 @@ export default function SharedCustomTable({ headers, rows, renderRowCells, sorta
 }
 </file>
 
-<file path="frontend/src/components/UserMenu.jsx">
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+<file path="frontend/src/context/CartContext.jsx">
+import React, { createContext, useState, useEffect } from 'react';
 
-export default function UserMenu({ user, onLogout }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef(null);
+export const CartContext = createContext();
+
+export function CartProvider({ children }) {
+  const [cart, setCart] = useState(() => {
+    // Retrieve stored cart data on initial load
+    const savedCart = localStorage.getItem('digistore_cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    // Persist cart state to local storage whenever it changes
+    localStorage.setItem('digistore_cart', JSON.stringify(cart));
+  }, [cart]);
 
-  if (!user) {
-    return (
-      <div className="flex items-center gap-2">
-        <Link to="/login" className="text-xs md:text-sm font-black text-gray-600 hover:text-[#6d28d9] transition-colors px-3 py-2 rounded-xl hover:bg-gray-50">
-          ورود
-        </Link>
-        <Link to="/register" className="px-4 py-2.5 bg-gradient-to-r from-[#6320ee] to-[#7c3aed] text-white text-xs md:text-sm font-black rounded-xl hover:shadow-md transition-all active:scale-95">
-          ثبت نام
-        </Link>
-      </div>
-    );
-  }
+  const addToCart = (product) => {
+    setCart((prevCart) => {
+      // Prevent adding duplicate digital items to the cart
+      const exists = prevCart.find((item) => item.id === product.id);
+      if (exists) return prevCart; 
+      return [...prevCart, product];
+    });
+  };
+
+  const removeFromCart = (productId) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce((total, item) => total + item.price, 0);
+  };
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 border border-purple-100 bg-gradient-to-r from-purple-50/40 to-indigo-50/40 p-1.5 md:p-2 md:pr-5 rounded-xl shadow-xs cursor-pointer hover:border-purple-200 transition-all active:scale-95"
-      >
-        <div className="hidden lg:flex flex-col text-right">
-          <span className="text-sm font-black text-gray-900">{user.fullName}</span>
-          <span className="text-xs font-bold text-purple-600 mt-0.5">
-            {user.role === 'ADMIN' ? 'مدیر سیستم' : user.role === 'SELLER' ? 'فروشنده' : 'خریدار'}
-          </span>
-        </div>
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#6320ee] to-[#863bff] text-white font-black text-sm flex justify-center items-center">
-          {user.fullName ? user.fullName.charAt(0) : 'U'}
-        </div>
-      </button>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getCartTotal }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+</file>
 
-      {/* Animated User Profile Menu Dropdown */}
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-3 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden text-right transform origin-top-left transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
-          <div className="p-4 bg-gradient-to-b from-purple-50/30 to-transparent border-b border-gray-50 lg:hidden">
-            <p className="text-xs font-black text-gray-900">{user.fullName}</p>
-            <p className="text-[10px] font-bold text-purple-600 mt-1">نقش: {user.role}</p>
-          </div>
-          <div className="p-1.5 flex flex-col gap-0.5">
-            <Link to="/dashboard" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
-              👤 مشاهده حساب کاربری
-            </Link>
-            <Link to="/settings" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
-              ⚙️ تنظیمات پروفایل
-            </Link>
-            <button 
-              onClick={() => { setIsOpen(false); onLogout(); }}
-              className="w-full text-right px-4 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer border-t border-gray-50 mt-1"
-            >
-              ✕ خروج از حساب
-            </button>
-          </div>
+<file path="frontend/src/pages/BuyerDashboard.jsx">
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+
+export default function BuyerDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/my-orders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Filter only completed orders to show active products
+          setOrders(data.filter(o => o.status === 'COMPLETED'));
+        }
+      } catch (error) {
+        console.error('Network error fetching library:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [navigate]);
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-12">
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">📚 کتابخانه محصولات من</h1>
+          <p className="text-sm text-gray-500 mt-2 font-medium">دسترسی دائمی به فایل‌ها، دوره‌ها و کدهای فعال‌سازی خریداری شده</p>
         </div>
-      )}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs">
+            <div className="text-6xl mb-4 opacity-50">📂</div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">کتابخانه شما خالی است</h2>
+            <p className="text-xs font-bold text-gray-400 mb-6">به بازارچه سر بزنید و اولین محصول خود را تهیه کنید.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {orders.map((order) => (
+              <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs flex flex-col gap-4">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-4">
+                  <div className="flex gap-4 items-center">
+                    <span className="text-xs font-black text-gray-500">شناسه خرید: #{order.id}</span>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                      {new Date(order.createdAt).toLocaleDateString('fa-IR')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {order.items.map((item) => (
+                    <div key={item.id} className="flex flex-col p-5 bg-gradient-to-br from-purple-50/50 to-white rounded-2xl border border-purple-100/50 gap-4 shadow-sm hover:shadow-md transition-shadow">
+                      
+                      {/* Product Info */}
+                      <div>
+                        <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-[9px] font-black rounded mb-2">
+                          {item.product.category === 'Course' ? 'دوره' : item.product.category === 'License' ? 'لایسنس' : 'فایل'}
+                        </span>
+                        <h3 className="text-sm font-black text-gray-900 line-clamp-1">{item.product.title}</h3>
+                      </div>
+                      
+                      {/* License Key Box */}
+                      {item.license && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-200 border-dashed flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-gray-400">کد اختصاصی:</span>
+                          <span className="text-xs font-black text-gray-900 font-mono tracking-wider">
+                            {item.license.licenseKey}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Action Button */}
+                      {item.product.category !== 'License' && item.product.fileUrl ? (
+                        <a 
+                          href={item.product.fileUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="mt-auto w-full py-2.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-center text-xs font-black rounded-xl transition-colors"
+                        >
+                          🔗 دریافت فایل / مشاهده
+                        </a>
+                      ) : (
+                        <div className="mt-auto w-full py-2.5 bg-green-50 text-green-700 text-center text-xs font-black rounded-xl border border-green-100">
+                          ✅ لایسنس آماده استفاده
+                        </div>
+                      )}
+                      
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1451,19 +1485,23 @@ export default function UserMenu({ user, onLogout }) {
 
 <file path="frontend/src/pages/Marketplace.jsx">
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ProductCard from '../components/ProductCard';
 
 export default function Marketplace() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Read initial category filter from URL query string if present, default to 'All'
+  const initialCategory = searchParams.get('category') || 'All';
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  
   const [isLoading, setIsLoading] = useState(true);
 
-  // Array of available categories for the filter buttons
   const categories = ['All', 'Course', 'Book', 'License'];
 
-  // Fetch all products from the backend when the component mounts
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -1482,7 +1520,26 @@ export default function Marketplace() {
     fetchProducts();
   }, []);
 
-  // Filter the products based on both search text and selected category
+  // Sync state if URL query params change dynamically
+  useEffect(() => {
+    const catParam = searchParams.get('category');
+    if (catParam) {
+      setSelectedCategory(catParam);
+    } else {
+      setSelectedCategory('All');
+    }
+  }, [searchParams]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    if (cat === 'All') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', cat);
+    }
+    setSearchParams(searchParams);
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
@@ -1497,10 +1554,9 @@ export default function Marketplace() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">بازارچه محصولات</h1>
-            <p className="text-sm text-gray-500 mt-2 font-medium">جدید ترین دوره ها، نرم افزار ها و کتاب های دیجیتال</p>
+            <p className="text-sm text-gray-500 mt-2 font-medium">جدیدترین دوره‌ها، نرم‌افزارها و کتاب‌های دیجیتال</p>
           </div>
           
-          {/* Search Box input for filtering items */}
           <div className="w-full md:w-96 relative shadow-sm rounded-xl">
             <input 
               type="text" 
@@ -1518,19 +1574,18 @@ export default function Marketplace() {
           {categories.map((cat, index) => (
             <button
               key={index}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => handleCategoryChange(cat)}
               className={`px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === cat 
                   ? 'bg-[#6320ee] text-white shadow-md' 
                   : 'bg-white text-gray-600 border border-gray-200 hover:border-[#6320ee] hover:text-[#6320ee]'
               }`}
             >
-              {cat === 'All' ? 'همه محصولات' : cat}
+              {cat === 'All' ? 'همه محصولات' : cat === 'Course' ? '📚 دوره‌ها' : cat === 'Book' ? '📄 کتاب‌ها' : '🔑 لایسنس‌ها'}
             </button>
           ))}
         </div>
 
-        {/* Display loading state, the filtered products grid, or a fallback message */}
         {isLoading ? (
           <div className="text-center py-20 text-gray-500 font-bold text-sm">در حال بارگذاری محصولات...</div>
         ) : filteredProducts.length > 0 ? (
@@ -1548,95 +1603,276 @@ export default function Marketplace() {
 }
 </file>
 
-<file path="frontend/src/pages/ProductDetails.jsx">
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+<file path="frontend/src/pages/PaymentResult.jsx">
+import React from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
-export default function ProductDetails() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function PaymentResult() {
+  const [searchParams] = useSearchParams();
+  const status = searchParams.get('status');
 
-  // Fetch the specific product details using the ID parameter from the URL
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setProduct(data);
-        } else {
-          // If the product doesn't exist, redirect the user back to the marketplace
-          navigate('/marketplace');
-        }
-      } catch (error) {
-        console.error('Error fetching product details:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id, navigate]);
-
-  // Placeholder function for handling the checkout process
-  const handleBuyClick = () => {
-    console.log(`Ready to checkout product: ${product.id}`);
-    alert("به زودی به درگاه پرداخت متصل می شود.");
+  const config = {
+    success: {
+      icon: '✅',
+      title: 'پرداخت با موفقیت انجام شد',
+      desc: 'سفارش شما ثبت شد و لایسنس‌های اختصاصی صادر گردید.',
+      color: 'text-green-600',
+      bg: 'bg-green-50',
+      border: 'border-green-200'
+    },
+    failed: {
+      icon: '❌',
+      title: 'پرداخت ناموفق بود',
+      desc: 'عملیات پرداخت لغو شد یا با خطا مواجه گردید. در صورت کسر وجه، مبلغ تا ۷۲ ساعت بازخواهد گشت.',
+      color: 'text-red-600',
+      bg: 'bg-red-50',
+      border: 'border-red-200'
+    },
+    invalid: {
+      icon: '⚠️',
+      title: 'تراکنش نامعتبر',
+      desc: 'این تراکنش قبلاً پردازش شده یا شناسه آن نامعتبر است.',
+      color: 'text-amber-600',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200'
+    },
+    error: {
+      icon: '🔌',
+      title: 'خطای سیستمی',
+      desc: 'ارتباط با سرور بانک برقرار نشد. لطفا بعدا مجددا تلاش کنید.',
+      color: 'text-gray-600',
+      bg: 'bg-gray-100',
+      border: 'border-gray-200'
+    }
   };
 
-  // Show a loading screen while data is being fetched
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f8f8fc]" style={{ direction: 'rtl' }}>
-        <Navbar />
-        <div className="text-center py-32 text-gray-500 font-bold text-sm">در حال بارگذاری اطلاعات محصول...</div>
+  const currentData = config[status] || config.error;
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a] flex flex-col" style={{ direction: 'rtl' }}>
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className={`max-w-md w-full bg-white rounded-3xl p-8 border shadow-xl text-center flex flex-col items-center animate-in zoom-in-95 duration-500 ${currentData.border}`}>
+          <div className={`w-24 h-24 flex items-center justify-center rounded-full text-5xl mb-6 ${currentData.bg}`}>
+            {currentData.icon}
+          </div>
+          
+          <h1 className={`text-2xl font-black mb-3 ${currentData.color}`}>
+            {currentData.title}
+          </h1>
+          
+          <p className="text-sm font-bold text-gray-500 leading-relaxed mb-8">
+            {currentData.desc}
+          </p>
+
+          <div className="w-full flex flex-col gap-3">
+            {status === 'success' ? (
+              <Link to="/buyer/dashboard" className="w-full py-4 bg-[#6320ee] hover:bg-[#521ac4] text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95">
+                📦 ورود به کتابخانه و دانلود محصولات
+              </Link>
+            ) : (
+              <Link to="/cart" className="w-full py-4 bg-gray-900 hover:bg-black text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95">
+                🔄 بازگشت به سبد خرید و تلاش مجدد
+              </Link>
+            )}
+            <Link to="/" className="w-full py-3 text-gray-500 hover:text-gray-800 text-xs font-bold transition-colors">
+              بازگشت به صفحه اصلی
+            </Link>
+          </div>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/src/pages/Settings.jsx">
+import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
+
+export default function Settings() {
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'password'
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Profile Form State
+  const [fullName, setFullName] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
+
+  // Password Form State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser) {
+      setUser(storedUser);
+      setFullName(storedUser.fullName || '');
+      setStoreName(storedUser.storeName || '');
+      setPhone(storedUser.phone || '');
+      setBio(storedUser.bio || '');
+    }
+  }, []);
+
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3500);
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ fullName, storeName, phone, bio })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('user', JSON.stringify(data.user)); // Update local storage
+        setUser(data.user);
+        showToast(data.message, 'success');
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch (error) {
+      showToast('خطا در ارتباط با سرور', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        showToast(data.message, 'success');
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch (error) {
+      showToast('خطا در ارتباط با سرور', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
       <Navbar />
-      
+
+      {/* Toast Notification */}
+      <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100000] px-5 py-3 rounded-xl shadow-2xl transition-all duration-500 ease-out flex items-center gap-3 text-xs font-black ${
+        toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+      } ${toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+        <span className="text-base">{toast.type === 'success' ? '✅' : '⚠️'}</span>
+        {toast.message}
+      </div>
+
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-10">
-          
-          {/* Placeholder for the product's main visual/image */}
-          <div className="w-full md:w-1/3 h-64 bg-gradient-to-br from-[#6320ee] to-[#863bff] rounded-2xl flex justify-center items-center text-white text-5xl shadow-inner">
-            📦
+        <div className="mb-10 text-center sm:text-right">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">تنظیمات حساب کاربری</h1>
+          <p className="text-sm text-gray-500 mt-2 font-medium">مدیریت اطلاعات فردی، فروشگاه و امنیت اکانت شما</p>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar Tabs */}
+          <div className="w-full md:w-1/4 flex flex-row md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0">
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${activeTab === 'profile' ? 'bg-[#6320ee] text-white shadow-lg shadow-purple-200' : 'bg-white text-gray-500 hover:bg-purple-50 hover:text-[#6d28d9]'}`}
+            >
+              <span>👤</span> اطلاعات کاربری
+            </button>
+            <button 
+              onClick={() => setActiveTab('password')}
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${activeTab === 'password' ? 'bg-[#6320ee] text-white shadow-lg shadow-purple-200' : 'bg-white text-gray-500 hover:bg-purple-50 hover:text-[#6d28d9]'}`}
+            >
+              <span>🔒</span> امنیت و رمز عبور
+            </button>
           </div>
 
-          {/* Product text information and checkout actions */}
-          <div className="w-full md:w-2/3 flex flex-col justify-between">
-            <div>
-              <h1 className="text-2xl font-black text-gray-900 mb-4">{product.title}</h1>
-              <p className="text-sm font-medium text-gray-500 leading-relaxed mb-6">
-                {product.description || "توضیحاتی برای این محصول ثبت نشده است."}
-              </p>
-              
-              <div className="inline-block bg-purple-50 px-4 py-2 rounded-xl mb-6 border border-purple-100">
-                <span className="text-xs text-gray-500 font-bold ml-2">فروشنده:</span>
-                <span className="text-xs font-black text-[#6d28d9]">{product.seller?.fullName || 'ناشناس'}</span>
-              </div>
-            </div>
+          {/* Form Content Area */}
+          <div className="w-full md:w-3/4 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-xs relative overflow-hidden">
+            
+            {activeTab === 'profile' && (
+              <form onSubmit={handleProfileUpdate} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h2 className="text-lg font-black text-gray-900 mb-6">ویرایش مشخصات پایه</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">نام و نام خانوادگی</label>
+                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-colors text-xs font-semibold" required />
+                  </div>
+                  
+                  {user.role === 'SELLER' && (
+                    <div className="space-y-5 pt-4 border-t border-gray-50">
+                      <h3 className="text-xs font-black text-[#6d28d9]">اطلاعات عمومی فروشگاه</h3>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-2">نام برند / فروشگاه</label>
+                        <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-colors text-xs font-semibold" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-2">شماره تماس (اختیاری)</label>
+                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-colors text-xs font-semibold text-left" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-2">درباره شما (Bio)</label>
+                        <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-colors text-xs font-semibold h-24 resize-none" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="pt-4">
+                    <button type="submit" disabled={isLoading} className="px-8 py-3.5 bg-[#6320ee] hover:bg-[#521ac4] text-white font-black rounded-xl transition-all text-xs cursor-pointer disabled:opacity-50 active:scale-95">
+                      {isLoading ? 'در حال ثبت...' : 'ذخیره تغییرات پروفایل'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-50 p-5 rounded-2xl border border-gray-100">
-              <div className="text-2xl font-black text-gray-900 mb-4 sm:mb-0">
-                {product.price.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">تومان</span>
-              </div>
-              
-              <button 
-                onClick={handleBuyClick}
-                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#6320ee] to-[#863bff] text-white font-black rounded-xl text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
-              >
-                افزودن به سبد خرید
-              </button>
-            </div>
+            {activeTab === 'password' && (
+              <form onSubmit={handlePasswordChange} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h2 className="text-lg font-black text-gray-900 mb-6">تغییر رمز عبور</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">رمز عبور فعلی</label>
+                    <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-colors text-xs font-semibold" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">رمز عبور جدید</label>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="حداقل ۸ کاراکتر وارد کنید" className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-colors text-xs font-semibold" required />
+                  </div>
+                  
+                  <div className="pt-4">
+                    <button type="submit" disabled={isLoading} className="px-8 py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-xl transition-all text-xs cursor-pointer disabled:opacity-50 active:scale-95">
+                      {isLoading ? 'در حال تغییر...' : 'بروزرسانی رمز عبور'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+            
           </div>
-
         </div>
       </div>
     </div>
@@ -1903,371 +2139,132 @@ The React Compiler is not enabled on this template because of its impact on dev 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 </file>
 
-<file path="backend/controllers/adminController.js">
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+<file path="Phase3-C4s/Level1-code.puml">
+@startuml
+skinparam {
+    DefaultFontName "Segoe UI"
+    BackgroundColor white
+    ActorBorderColor #222222
+    ActorBackgroundColor #DDDDDD
+}
 
-const getPendingProducts = async (req, res) => {
-    try {
-        const products = await prisma.product.findMany({
-            include: {
-                seller: { select: { id: true, fullName: true, storeName: true } }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(products);
-    } catch (error) {
-        console.error("Admin Get Products Error:", error);
-        res.status(500).json({ message: "Failed to fetch products registry." });
-    }
-};
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
 
-const verifyProduct = async (req, res) => {
-    try {
-        const { productId, status } = req.body;
+skinparam rectangle {
+    BackgroundColor<<Main>> #1168BD
+    BorderColor<<Main>> #0B4884
+    FontColor<<Main>> white
+    
+    BackgroundColor<<External>> #999999
+    BorderColor<<External>> #666666
+    FontColor<<External>> white
+}
 
-        if (!productId || !['APPROVED', 'REJECTED', 'PENDING'].includes(status)) {
-            return res.status(400).json({ message: "Invalid product ID or status value." });
-        }
+actor "Admin" as admin
+actor "Buyer" as buyer
+actor "Seller" as seller
 
-        const updatedProduct = await prisma.product.update({
-            where: { id: parseInt(productId) },
-            data: { status: status }
-        });
+rectangle "Digital Store System\n<size:10>[Software System]</size>\n\nPlatform for digital product sales,\nsubscriptions, licenses, and secure access" <<Main>> as system
 
-        res.status(200).json({ message: "Product status successfully modified.", product: updatedProduct });
-    } catch (error) {
-        console.error("Admin Verify Product Error:", error);
-        res.status(500).json({ message: "Failed to update product verification status." });
-    }
-};
+package "External Systems" {
+    rectangle "Payment Gateway\n<size:10>[External]</size>" <<External>> as payment
+    rectangle "File Storage\n<size:10>[External]</size>" <<External>> as storage
+    rectangle "Email Service\n<size:10>[External]</size>" <<External>> as email
+}
 
-const getAllUsers = async (req, res) => {
-    try {
-        const users = await prisma.user.findMany({
-            select: { id: true, email: true, fullName: true, role: true, storeName: true, isBanned: true, createdAt: true },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(users);
-    } catch (error) {
-        console.error("Admin Get Users Error:", error);
-        res.status(500).json({ message: "Failed to fetch users registry." });
-    }
-};
 
-const toggleUserBan = async (req, res) => {
-    try {
-        const { userId, isBanned } = req.body;
+admin --> system : "Administer platform\n[HTTPS]"
+buyer --> system : "Browse, buy, subscribe,\ndownload [HTTPS]"
+seller --> system : "Manage products and\nview reports [HTTPS]"
 
-        const updatedUser = await prisma.user.update({
-            where: { id: parseInt(userId) },
-            data: { isBanned: Boolean(isBanned) }
-        });
+system --> payment : "Process payment\n[API]"
+payment ..> system : "Payment result\n[Callback]"
 
-        res.status(200).json({ message: "User account restriction status updated successfully.", user: updatedUser });
-    } catch (error) {
-        console.error("Admin Toggle Ban Error:", error);
-        res.status(500).json({ message: "Failed to apply restriction on user account." });
-    }
-};
+system --> storage : "Store/retrieve files\n[Secure API]"
+system --> email : "Send emails\n[SMTP/API]"
 
-const updateUserRole = async (req, res) => {
-    try {
-        const { userId, role } = req.body;
-
-        if (!['BUYER', 'SELLER', 'ADMIN'].includes(role)) {
-            return res.status(400).json({ message: "Invalid role value." });
-        }
-
-        const updatedUser = await prisma.user.update({
-            where: { id: parseInt(userId) },
-            data: { role }
-        });
-
-        res.status(200).json({ message: "User access authorization role modified.", user: updatedUser });
-    } catch (error) {
-        console.error("Admin Shift Role Error:", error);
-        res.status(500).json({ message: "Failed to modify user access role structure." });
-    }
-};
-
-const getAllTransactions = async (req, res) => {
-    try {
-        const transactions = await prisma.transaction.findMany({
-            include: {
-                order: { include: { buyer: { select: { fullName: true, email: true } } } }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(transactions);
-    } catch (error) {
-        console.error("Admin Get Transactions Error:", error);
-        res.status(500).json({ message: "Failed to fetch transaction logs." });
-    }
-};
-
-module.exports = { getPendingProducts, verifyProduct, getAllUsers, toggleUserBan, updateUserRole, getAllTransactions };
+@enduml
 </file>
 
-<file path="backend/controllers/orderController.js">
-const { PrismaClient } = require('@prisma/client');
-const crypto = require('crypto'); // Built-in Node.js module for secure random generation
-const prisma = new PrismaClient();
+<file path="Phase3-C4s/Level2-code.puml">
+@startuml
+title Level 2 Architecture - Marketplace Project
 
-// Helper function to generate a secure, unique license key (e.g., ADCC-8F9A-4B2C-1D3E)
-const generateLicenseKey = (productTitle) => {
-    const prefix = productTitle.substring(0, 4).toUpperCase().padEnd(4, 'X');
-    const randomHex = crypto.randomBytes(6).toString('hex').toUpperCase();
-    return `${prefix}-${randomHex.slice(0, 4)}-${randomHex.slice(4, 8)}-${randomHex.slice(8, 12)}`;
-};
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
 
-// Process Checkout: Create Order, OrderItem, Transaction, AND License
-const createOrder = async (req, res) => {
-    try {
-        const { productId, paymentMethod } = req.body;
-        const buyerId = req.user.userId;
+actor Buyer
+actor Seller
+actor Admin
 
-        if (!productId) {
-            return res.status(400).json({ message: "Product ID is required." });
-        }
+package "Frontend\nReact + Vite + Tailwind" as Frontend {
+  [Home Page] as Home
+  [Login Page] as Login
+  [Register Page] as Register
+  [Marketplace Page] as Marketplace
+  [Product Details Page] as ProductDetails
+  [Seller Dashboard] as SellerDashboard
+  [Admin Dashboard] as AdminDashboard
+}
 
-        const product = await prisma.product.findUnique({
-            where: { id: parseInt(productId) }
-        });
+package "Backend API\nNode.js + Express" as Backend {
+  [Auth API\n/api/auth] as AuthAPI
+  [Product API\n/api/products] as ProductAPI
+  [Seller API\n/api/seller] as SellerAPI
+  [Buyer API\n/api/buyer] as BuyerAPI
+  [Admin API\n/api/admin] as AdminAPI
 
-        if (!product) {
-            return res.status(404).json({ message: "Product not found." });
-        }
+  [JWT + RBAC Middleware\nverifyToken, isSeller, isAdmin] as AuthMiddleware
+  [Prisma ORM] as Prisma
 
-        // Use Prisma Transaction to ensure all or nothing is saved
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Create Order and OrderItem
-            const order = await tx.order.create({
-                data: {
-                    buyerId: buyerId,
-                    totalAmount: product.price,
-                    status: 'COMPLETED',
-                    items: {
-                        create: [
-                            {
-                                productId: product.id,
-                                price: product.price
-                            }
-                        ]
-                    }
-                },
-                include: {
-                    items: true // Include items to get the OrderItem ID
-                }
-            });
+  [Order Routes\norderRoutes.js] as OrderRoutes
+}
 
-            const orderItem = order.items[0]; // Assuming single-item checkout for now
+database "PostgreSQL Database" as PostgreSQL
 
-            // 2. Create the Payment Transaction
-            const transaction = await tx.transaction.create({
-                data: {
-                    orderId: order.id,
-                    amount: product.price,
-                    paymentMethod: paymentMethod || 'CREDIT_CARD',
-                    status: 'SUCCESS'
-                }
-            });
+Buyer --> Frontend
+Seller --> Frontend
+Admin --> Frontend
 
-            // 3. GENERATE LICENSE
-            const license = await tx.license.create({
-                data: {
-                    licenseKey: generateLicenseKey(product.title),
-                    productId: product.id,
-                    orderItemId: orderItem.id,
-                    isValid: true
-                }
-            });
+Frontend --> AuthAPI
+Frontend --> ProductAPI
+Frontend --> SellerAPI
+Frontend --> BuyerAPI
+Frontend --> AdminAPI
 
-            return { order, transaction, license };
-        });
+AuthAPI --> AuthMiddleware
+SellerAPI --> AuthMiddleware
+BuyerAPI --> AuthMiddleware
+AdminAPI --> AuthMiddleware
 
-        res.status(201).json({
-            message: "Purchase successful! License generated.",
-            order: result.order,
-            transaction: result.transaction,
-            license: result.license
-        });
+AuthAPI --> Prisma
+ProductAPI --> Prisma
+SellerAPI --> Prisma
+BuyerAPI --> Prisma
+AdminAPI --> Prisma
 
-    } catch (error) {
-        console.error("Checkout Error:", error);
-        res.status(500).json({ message: "Failed to process checkout and generate license." });
-    }
-};
+Prisma --> PostgreSQL
 
-// Get all orders for the logged-in buyer
-const getMyOrders = async (req, res) => {
-    try {
-        const buyerId = req.user.userId;
-        const orders = await prisma.order.findMany({
-            where: { buyerId: buyerId },
-            include: {
-                items: {
-                    include: {
-                        product: true,
-                        license: true // Include the license so the frontend can display it
-                    }
-                },
-                transaction: true
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(orders);
-    } catch (error) {
-        console.error("Fetch Orders Error:", error);
-        res.status(500).json({ message: "Failed to fetch orders." });
-    }
-};
+OrderRoutes ..> AuthMiddleware
+OrderRoutes ..> Prisma
 
-module.exports = { createOrder, getMyOrders };
-</file>
+note right of OrderRoutes
+Exists in code as orderRoutes.js
+but is not mounted in server.js.
+Current status:
+exists but not active
+end note
 
-<file path="backend/controllers/sellerController.js">
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+note bottom of Prisma
+Prisma is an ORM used by the Backend.
+The actual database is PostgreSQL.
+end note
 
-// Seller Action: Create any digital product (Course, Book, or License)
-const sellerCreateProduct = async (req, res) => {
-    try {
-        const { title, description, price, category, fileUrl } = req.body;
-        const sellerId = req.user.userId;
-
-        if (!title || !price || !category) {
-            return res.status(400).json({ message: "وارد کردن عنوان، قیمت و دسته‌بندی الزامی است." });
-        }
-
-        if (category !== 'License' && !fileUrl) {
-            return res.status(400).json({ message: "برای این نوع محصول، وارد کردن لینک فایل یا استریم الزامی است." });
-        }
-
-        const newProduct = await prisma.product.create({
-            data: {
-                title,
-                description,
-                price: parseFloat(price),
-                category,
-                fileUrl: category === 'License' ? '' : fileUrl,
-                status: 'PENDING',
-                sellerId: sellerId
-            }
-        });
-
-        res.status(201).json({
-            message: "محصول با موفقیت ثبت شد و در انتظار تایید مدیریت است.",
-            product: newProduct
-        });
-    } catch (error) {
-        console.error("Seller Create Product Core Error:", error);
-        res.status(500).json({ message: "خطا در ثبت محصول جدید در پایگاه داده." });
-    }
-};
-
-// Seller Action: Fetch store statistics, charts context, and clients registry
-const getSellerAnalytics = async (req, res) => {
-    try {
-        const sellerId = req.user.userId;
-
-        const products = await prisma.product.findMany({
-            where: { sellerId },
-            include: {
-                reviews: { include: { user: { select: { fullName: true, email: true } } } },
-                orderItems: { include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } } }
-            }
-        });
-
-        let totalEarnings = 0;
-        let totalSales = 0;
-        const customersMap = new Map();
-        const recentReviews = [];
-
-        products.forEach(product => {
-            product.orderItems.forEach(item => {
-                if (item.order.status === 'COMPLETED') {
-                    totalEarnings += item.price;
-                    totalSales += 1;
-                    const buyer = item.order.buyer;
-                    if (buyer) {
-                        customersMap.set(buyer.email, {
-                            fullName: buyer.fullName,
-                            email: buyer.email,
-                            productTitle: product.title,
-                            purchaseDate: item.order.createdAt
-                        });
-                    }
-                }
-            });
-
-            product.reviews.forEach(review => {
-                recentReviews.push({
-                    id: review.id,
-                    rating: review.rating,
-                    comment: review.comment,
-                    productTitle: product.title,
-                    buyerName: review.user.fullName,
-                    createdAt: review.createdAt
-                });
-            });
-        });
-
-        recentReviews.sort((a, b) => b.createdAt - a.createdAt);
-
-        const monthlyData = [
-            { month: 'فروردین', sales: Math.round(totalSales * 0.1), earnings: Math.round(totalEarnings * 0.1) },
-            { month: 'اردیبهشت', sales: Math.round(totalSales * 0.15), earnings: Math.round(totalEarnings * 0.15) },
-            { month: 'خرداد', sales: Math.round(totalSales * 0.2), earnings: Math.round(totalEarnings * 0.2) },
-            { month: 'تیر', sales: Math.round(totalSales * 0.55), earnings: Math.round(totalEarnings * 0.55) },
-        ];
-
-        res.status(200).json({
-            productsCount: products.length,
-            totalEarnings,
-            totalSales,
-            products: products.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category, status: p.status, description: p.description, fileUrl: p.fileUrl })),
-            customers: Array.from(customersMap.values()),
-            recentReviews: recentReviews.slice(0, 5),
-            monthlyData
-        });
-    } catch (error) {
-        console.error("Seller Analytics Extraction Error:", error);
-        res.status(500).json({ message: "Failed to extract seller performance metrics." });
-    }
-};
-
-// Seller Action: Modify product properties
-const updateSellerProduct = async (req, res) => {
-    try {
-        const { productId, title, description, price, category } = req.body;
-        const sellerId = req.user.userId;
-
-        const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
-
-        if (!product || product.sellerId !== sellerId) {
-            return res.status(403).json({ message: "Unauthorized operation on this asset resource." });
-        }
-
-        const updatedProduct = await prisma.product.update({
-            where: { id: parseInt(productId) },
-            data: {
-                title,
-                description,
-                price: parseFloat(price),
-                category,
-                status: 'PENDING'
-            }
-        });
-
-        res.status(200).json({ message: "Product modified successfully and returned to queue.", product: updatedProduct });
-    } catch (error) {
-        console.error("Seller Edit Product Exception:", error);
-        res.status(500).json({ message: "Failed to modify product attributes." });
-    }
-};
-
-module.exports = { sellerCreateProduct, getSellerAnalytics, updateSellerProduct };
+@enduml
 </file>
 
 <file path="backend/middleware/authMiddleware.js">
@@ -2489,6 +2486,323 @@ main()
     });
 </file>
 
+<file path="backend/routes/adminRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { 
+    getAdminProducts, 
+    verifyProduct, 
+    getAllUsers, 
+    toggleUserBan, 
+    updateUserRole, 
+    getAllTransactions 
+} = require('../controllers/adminController');
+const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
+
+router.use(verifyToken, isAdmin);
+
+// Corrected route definitions with proper clean naming conventions
+router.get('/products', getAdminProducts);
+router.post('/verify-product', verifyProduct);
+router.get('/users', getAllUsers);
+router.post('/user-ban', toggleUserBan);
+router.post('/user-role', updateUserRole);
+router.get('/transactions', getAllTransactions);
+
+module.exports = router;
+</file>
+
+<file path="backend/routes/orderRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { requestPayment, verifyPayment, getMyOrders } = require('../controllers/orderController');
+const { verifyToken } = require('../middleware/authMiddleware');
+
+// Protected route: Initiating payment requires login
+router.post('/request', verifyToken, requestPayment);
+
+// Public route: Zarinpal redirects the user here, no auth token available
+router.get('/verify', verifyPayment);
+
+// Protected route: Viewing orders requires login
+router.get('/my-orders', verifyToken, getMyOrders);
+
+module.exports = router;
+</file>
+
+<file path="backend/routes/sellerRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { createProduct, getSellerAnalytics, updateProduct } = require('../controllers/sellerController');
+const { verifyToken, isSeller } = require('../middleware/authMiddleware');
+
+router.use(verifyToken, isSeller);
+
+router.post('/product', createProduct);
+router.get('/analytics', getSellerAnalytics);
+router.put('/product-edit', updateProduct);
+
+module.exports = router;
+</file>
+
+<file path="frontend/src/components/admin/AdminProductManagement.jsx">
+import React, { useState, useRef, useEffect } from 'react';
+import SharedCustomTable from '../SharedCustomTable';
+
+export default function AdminProductManagement({ products, onVerify, onInspect }) {
+  const [activeMenu, setActiveMenu] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setActiveMenu(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const headers = ["نام محصول / دوره", "نوع کالا", "قیمت پایه", "وضعیت بررسی", "اقدامات مدیریتی"];
+
+  const sortableFields = {
+    0: 'title',
+    2: 'price',
+    3: 'status'
+  };
+
+  // Accurately map product categories and provide a safe fallback for unknown types
+  const renderRowCells = (p) => [
+    <span className="text-xs font-black text-gray-900">{p.title}</span>,
+    <span className="text-xs font-bold text-gray-500">
+      {p.category === 'Course' ? '📚 دوره آموزشی' : 
+       p.category === 'Book' ? '📄 کتاب / PDF' : 
+       p.category === 'License' ? '🔑 لایسنس' : '📦 سایر موارد'}
+    </span>,
+    <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
+    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
+      p.status === 'APPROVED' ? 'bg-green-50 text-green-600 border border-green-100' :
+      p.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+    }`}>
+      {p.status === 'APPROVED' ? 'منتشر شده' : p.status === 'REJECTED' ? 'رد شده' : 'در انتظار بررسی'}
+    </span>,
+    <div className="relative text-center action-gate">
+      <button 
+        onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === p.id ? null : p.id); }}
+        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] border border-purple-100/60 rounded-xl text-[11px] font-black shadow-xs hover:from-[#6320ee] hover:to-[#863bff] hover:text-white transition-all duration-300 active:scale-95 cursor-pointer"
+      >
+        ⚙️ عملیات
+      </button>
+      {activeMenu === p.id && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-44 bg-white border border-purple-100/80 shadow-2xl rounded-2xl z-50 p-1.5 flex flex-col gap-0.5 text-right transform origin-top transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
+          <button onClick={() => { setActiveMenu(null); onInspect(p); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-purple-50 text-purple-700 rounded-xl transition-all cursor-pointer">🔍 بازرسی کامل محتوا</button>
+          {p.status !== 'APPROVED' && <button onClick={() => { setActiveMenu(null); onVerify(p.id, 'APPROVED'); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-green-50 text-green-600 rounded-xl transition-all cursor-pointer">✅ تایید و انتشار عمومی</button>}
+          {p.status !== 'REJECTED' && <button onClick={() => { setActiveMenu(null); onVerify(p.id, 'REJECTED'); }} className="w-full text-right p-2.5 text-[11px] font-black hover:bg-red-50 text-red-600 rounded-xl transition-all cursor-pointer">🚫 لغو انتشار و رد کالا</button>}
+        </div>
+      )}
+    </div>
+  ];
+
+  return <div ref={menuRef}><SharedCustomTable headers={headers} rows={products} renderRowCells={renderRowCells} sortableFields={sortableFields} /></div>;
+}
+</file>
+
+<file path="frontend/src/components/seller/CreateProductModal.jsx">
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function CreateProductModal({ isOpen, onClose, onSave }) {
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('Course'); 
+  const [fileUrl, setFileUrl] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  // Handle form submission and prevent state updates on unmounted component
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    await onSave({
+      title,
+      price: parseFloat(price),
+      category,
+      fileUrl: category === 'License' ? '' : fileUrl,
+      description
+    });
+    
+    // State resets are removed because the component is destroyed by the parent upon success
+  };
+
+  return createPortal(
+    <>
+      <div 
+        onClick={() => !isSubmitting && onClose()} 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
+      />
+      <div 
+        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">➕ ثبت و انتشار کالا یا دوره جدید</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان یا نام محصول</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: آموزش پیشرفته ری‌اکت یا لایسنس ویندوز ۱۱" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">نوع محصول دیجیتال</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer">
+              <option value="Course">📚 دوره آموزشی (پخش آنلاین ویدیو)</option>
+              <option value="Book">📄 کتاب دیجیتال / فایل چاپی (PDF / ZIP)</option>
+              <option value="License">🔑 لایسنس اختصاصی نرم‌افزار / کد فعال‌سازی</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت پایه (تومان)</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          {category !== 'License' && (
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-2">
+                {category === 'Course' ? '🔗 لینک استریم ویدیوها' : '🔗 آدرس امن دانلود فایل'}
+              </label>
+              <input type="url" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://storage.digistore.com/..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی کالا</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="سرفصل‌ها یا مشخصات فنی فایل را وارد کنید..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
+              {isSubmitting ? 'در حال ارسال درخواست...' : 'ارسال کالا جهت بررسی و تایید مدیر'}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
+          </div>
+        </form>
+      </div>
+    </>,
+    document.body
+  );
+}
+</file>
+
+<file path="frontend/src/components/seller/EditProductModal.jsx">
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function EditProductModal({ isOpen, onClose, product, onSave }) {
+  const [title, setTitle] = useState(product?.title || '');
+  const [price, setPrice] = useState(product?.price || '');
+  const [category, setCategory] = useState(product?.category || 'Course');
+  const [description, setDescription] = useState(product?.description || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  // Handle form submission and prevent state updates on unmounted component
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSave({ productId: product.id, title, price: parseFloat(price), category, description });
+    // State reset for isSubmitting removed to prevent React unmount warnings
+  };
+
+  return createPortal(
+    <>
+      <div 
+        onClick={() => !isSubmitting && onClose()} 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
+      />
+      <div 
+        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">✏️ ویرایش مشخصات محصول</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان محصول</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت (تومان)</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
+          </div>
+          <div className="pt-4 flex gap-3">
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
+              {isSubmitting ? 'در حال ذخیره‌سازی...' : 'اعمال تغییرات و بررسی مجدد'}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
+          </div>
+        </form>
+      </div>
+    </>,
+    document.body
+  );
+}
+</file>
+
+<file path="frontend/src/components/seller/SellerProducts.jsx">
+import React from 'react';
+import SharedCustomTable from '../SharedCustomTable';
+
+export default function SellerProducts({ products, onEdit }) {
+  const headers = ["نام محصول / دوره", "نوع کالا", "قیمت پایه", "وضعیت تایید", "عملیات"];
+
+  const sortableFields = {
+    0: 'title',
+    2: 'price',
+    3: 'status'
+  };
+
+  // Accurately map product categories and provide a safe fallback for unknown types
+  const renderRowCells = (p) => [
+    <span className="text-xs font-black text-gray-900">{p.title}</span>,
+    <span className="text-xs font-bold text-gray-500">
+      {p.category === 'Course' ? '📚 دوره آموزشی' : 
+       p.category === 'Book' ? '📄 کتاب / PDF' : 
+       p.category === 'License' ? '🔑 لایسنس' : '📦 سایر موارد'}
+    </span>,
+    <span className="text-xs font-bold text-purple-600">{p.price.toLocaleString('en-US')} تومان</span>,
+    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
+      p.status === 'APPROVED' ? 'bg-green-50 text-green-600 border border-green-100' : 
+      p.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+    }`}>
+      {p.status === 'APPROVED' ? 'تایید شده' : p.status === 'REJECTED' ? 'رد شده' : 'در انتظار بررسی'}
+    </span>,
+    <div className="text-center">
+      <button 
+        onClick={() => onEdit(p)} 
+        className="px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-[#6320ee] hover:from-[#6320ee] hover:to-[#863bff] hover:text-white border border-purple-100/60 rounded-xl text-xs font-black shadow-xs transition-all duration-300 active:scale-95 cursor-pointer"
+      >
+        ✏️ ویرایش محتوا
+      </button>
+    </div>
+  ];
+
+  return <SharedCustomTable headers={headers} rows={products} renderRowCells={renderRowCells} sortableFields={sortableFields} />;
+}
+</file>
+
 <file path="frontend/src/components/AuthLayout.jsx">
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -2579,20 +2893,158 @@ export default function ProductCard({ item }) {
 }
 </file>
 
+<file path="frontend/src/pages/Cart.jsx">
+import React, { useContext, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import { CartContext } from '../context/CartContext';
+
+export default function Cart() {
+  const { cart, removeFromCart, getCartTotal, clearCart } = useContext(CartContext);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
+
+const handleCheckout = async () => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      alert("برای تکمیل خرید ابتدا باید وارد حساب کاربری شوید.");
+      navigate('/login');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const productIds = cart.map(item => item.id);
+
+      // Hit the new request endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productIds })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.paymentUrl) {
+        clearCart(); // Clear cart as they transition to the gateway
+        // Redirect browser to Zarinpal Sandbox
+        window.location.href = data.paymentUrl; 
+      } else {
+        alert(`خطا: ${data.message}`);
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error("Gateway Connection Error:", error);
+      alert("ارتباط با سرور قطع شد.");
+      setIsProcessing(false);
+    }
+  };
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+      
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        <h1 className="text-3xl font-black text-gray-900 mb-2">🛒 سبد خرید شما</h1>
+        <p className="text-sm text-gray-500 font-medium mb-8">بررسی نهایی فاکتور و اتصال به درگاه پرداخت امن</p>
+
+        {cart.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs">
+            <div className="text-6xl mb-4 opacity-50">📦</div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">سبد خرید شما خالی است!</h2>
+            <p className="text-xs font-bold text-gray-400 mb-6">هنوز هیچ محصولی برای خرید انتخاب نکرده‌اید.</p>
+            <Link to="/marketplace" className="inline-block px-8 py-3.5 bg-[#6320ee] hover:bg-[#521ac4] text-white font-black rounded-xl text-xs transition-colors cursor-pointer">
+              مشاهده بازارچه محصولات
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-8">
+            
+            <div className="flex-1 bg-white rounded-3xl p-6 border border-gray-100 shadow-xs h-fit">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-50">
+                <span className="text-sm font-black text-gray-900">لیست محصولات ({cart.length})</span>
+                <button onClick={clearCart} className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer">✕ پاک کردن همه</button>
+              </div>
+
+              <div className="space-y-4">
+                {cart.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50">
+                    <div className="flex flex-col">
+                      <Link to={`/product/${item.id}`} className="text-sm font-black text-gray-900 hover:text-[#6320ee] transition-colors line-clamp-1">{item.title}</Link>
+                      <span className="text-[11px] font-bold text-gray-400 mt-1">
+                        دسته‌بندی: {item.category === 'Course' ? 'دوره' : item.category === 'License' ? 'لایسنس' : 'فایل/کتاب'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <span className="text-sm font-black text-[#6d28d9]">{item.price.toLocaleString('en-US')} <span className="text-[10px] text-gray-400 font-bold">تومان</span></span>
+                      <button onClick={() => removeFromCart(item.id)} className="w-8 h-8 flex justify-center items-center rounded-lg bg-white border border-gray-200 text-red-500 hover:bg-red-50 hover:border-red-100 transition-all cursor-pointer">
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-full lg:w-1/3 bg-white rounded-3xl p-6 border border-gray-100 shadow-xs h-fit sticky top-24">
+              <h3 className="text-base font-black text-gray-900 mb-6">خلاصه صورت‌حساب</h3>
+              
+              <div className="space-y-4 text-sm font-bold text-gray-600 mb-6 pb-6 border-b border-gray-50">
+                <div className="flex justify-between">
+                  <span>تعداد اقلام:</span>
+                  <span className="text-gray-900">{cart.length} عدد</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>تخفیف:</span>
+                  <span className="text-red-500">۰ تومان</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-8">
+                <span className="text-sm font-black text-gray-900">مبلغ قابل پرداخت:</span>
+                <span className="text-lg font-black text-[#6d28d9]">{getCartTotal().toLocaleString('en-US')} <span className="text-xs text-gray-400 font-bold">تومان</span></span>
+              </div>
+
+              <button 
+                onClick={handleCheckout} 
+                disabled={isProcessing}
+                className="w-full py-4 bg-gradient-to-r from-[#6320ee] to-[#863bff] hover:from-[#521ac4] hover:to-[#6d28d9] text-white font-black rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer"
+              >
+                {isProcessing ? 'در حال انتقال به درگاه...' : '💳 اتصال به درگاه پرداخت'}
+              </button>
+              
+              <p className="text-center text-[10px] font-bold text-gray-400 mt-4">
+                پرداخت شما از طریق درگاه امن زرین‌پال انجام می‌شود.
+              </p>
+            </div>
+            
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="frontend/src/pages/Home.jsx">
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import SellerCTA from '../components/SellerCTA';
+import Footer from '../components/Footer'; // Import the new Footer component
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredItems, setFeaturedItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Fetch the latest 4 products from the database when the component mounts
   useEffect(() => {
     const fetchLatestProducts = async () => {
       try {
@@ -2611,40 +3063,51 @@ export default function Home() {
     fetchLatestProducts();
   }, []);
 
+  const handleCategoryClick = (categoryName) => {
+    if (categoryName === 'All') {
+      navigate('/marketplace');
+    } else {
+      navigate(`/marketplace?category=${categoryName}`);
+    }
+  };
+
   return (
-    // حذف overflow-hidden از این تگ تا sticky نوبار به درستی کار کند
-    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a] relative pb-12" style={{ direction: 'rtl' }}>
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a] relative flex flex-col" style={{ direction: 'rtl' }}>
       
-      {/* محفظه جداگانه برای افکت های پس زمینه که فقط اضافه ها را مخفی می کند */}
+      {/* Background Lights */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-300/20 rounded-full blur-3xl" />
         <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-blue-300/15 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-indigo-200/20 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1">
         <Navbar />
 
         <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
         {/* Grid Categories Showcase Section */}
         <section className="max-w-6xl mx-auto px-6 mb-24">
-          <h2 className="text-xl font-black mb-1.5 text-gray-900 tracking-tight">دسته بندی محصولات دیجیتال</h2>
+          <h2 className="text-xl font-black mb-1.5 text-gray-900 tracking-tight">دسته‌بندی محصولات دیجیتال</h2>
           <p className="text-xs font-bold text-gray-400 mb-8">کالای یادگیری یا ابزار کاربردی خود را انتخاب کنید</p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[
-              { icon: "🔑", label: "لایسنس و اشتراک اپ", count: "+ 120 محصول" },
-              { icon: "🎓", label: "دوره های اموزشی ویدیویی", count: "+ 250 دوره" },
-              { icon: "📖", label: "کتاب و جزوات الکترونیکی", count: "+ 90 کتاب" },
-              { icon: "🛠", label: "ابزارها و افزونه های وب", count: "+ 45 فایل" }
+              { icon: "🔑", label: "لایسنس و اشتراک اپ", type: "License", count: "تحویل آنی کلید" },
+              { icon: "🎓", label: "دوره‌های آموزشی ویدیویی", type: "Course", count: "پخش آنلاین ویدیو" },
+              { icon: "📖", label: "کتاب و جزوات الکترونیکی", type: "Book", count: "دانلود فایل PDF" },
+              { icon: "📦", label: "همه محصولات بازارچه", type: "All", count: "مشاهده آرشیو کامل" }
             ].map((cat, index) => (
-              <div key={index} className="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-xs hover:border-[#6320ee] hover:shadow-md transition-all duration-200 cursor-pointer group">
+              <div 
+                key={index} 
+                onClick={() => handleCategoryClick(cat.type)}
+                className="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-xs hover:border-[#6320ee] hover:shadow-md transition-all duration-200 cursor-pointer group"
+              >
                 <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-200">{cat.icon}</div>
                 <h3 className="text-xs font-black text-gray-900 mb-1">{cat.label}</h3>
                 <p className="text-[10px] font-bold text-gray-400 tracking-wide">{cat.count}</p>
               </div>
-          ))}
+            ))}
           </div>
         </section>
 
@@ -2653,7 +3116,7 @@ export default function Home() {
           <div className="flex justify-between items-end mb-8">
             <div>
               <h2 className="text-lg font-black text-gray-900 tracking-tight">ویترین محصولات برتر بازارچه</h2>
-              <p className="text-xs font-bold text-gray-400 mt-1">تضمین لایسنس های معتبر قانونی و دسترسی همیشگی به فایل ها</p>
+              <p className="text-xs font-bold text-gray-400 mt-1">تضمین لایسنس‌های معتبر قانونی و دسترسی همیشگی به فایل‌ها</p>
             </div>
             <Link to="/marketplace" className="text-xs font-black text-[#6d28d9] hover:underline bg-purple-50 px-3 py-1.5 rounded-xl">مشاهده همه محصولات ←</Link>
           </div>
@@ -2674,6 +3137,93 @@ export default function Home() {
         <SellerCTA />
       </div>
 
+      {/* Render the clean enterprise footer component */}
+      <Footer />
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/src/pages/ProductDetails.jsx">
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import { CartContext } from '../context/CartContext';
+
+export default function ProductDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { addToCart, cart } = useContext(CartContext);
+
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProduct(data);
+        } else {
+          navigate('/marketplace');
+        }
+      } catch (error) {
+        console.error("Failed to fetch product details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProductDetails();
+  }, [id, navigate]);
+
+  const handleBuyClick = () => {
+    const isAlreadyInCart = cart.some(item => item.id === product.id);
+    if (isAlreadyInCart) {
+      alert("این محصول قبلاً به سبد خرید اضافه شده است!");
+      return;
+    }
+    
+    addToCart(product);
+  };
+
+  if (isLoading) return <div className="min-h-screen bg-[#f8f8fc] flex items-center justify-center font-black">در حال بارگذاری...</div>;
+  if (!product) return null;
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
+        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xs flex flex-col md:flex-row gap-8">
+          
+          <div className="flex-1 space-y-6">
+            <div>
+              <span className="px-3 py-1 bg-purple-50 text-[#6d28d9] text-[10px] font-black rounded-lg mb-4 inline-block">
+                {product.category === 'Course' ? 'دوره آموزشی' : product.category === 'License' ? 'لایسنس' : 'کتاب / فایل'}
+              </span>
+              <h1 className="text-3xl font-black text-gray-900 leading-tight">{product.title}</h1>
+              <p className="text-sm font-bold text-gray-400 mt-2">فروشنده: {product.seller?.storeName || product.seller?.fullName}</p>
+            </div>
+            
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 mb-2">توضیحات محصول</h3>
+              <p className="text-xs font-semibold text-gray-600 leading-relaxed whitespace-pre-wrap">{product.description}</p>
+            </div>
+          </div>
+
+          <div className="w-full md:w-80 flex flex-col gap-4">
+            <div className="p-6 bg-gradient-to-b from-purple-50 to-white rounded-3xl border border-purple-100/50 shadow-sm text-center">
+              <span className="block text-xs font-bold text-gray-500 mb-1">قیمت نهایی</span>
+              <span className="text-3xl font-black text-[#6d28d9]">{product.price.toLocaleString('en-US')} <span className="text-sm">تومان</span></span>
+              
+              <button onClick={handleBuyClick} className="w-full mt-6 py-3.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer">
+                افزودن به سبد خرید
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }
@@ -2757,17 +3307,577 @@ export default defineConfig({
 })
 </file>
 
+<file path="backend/controllers/adminController.js">
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Fetch all products with seller details for the admin review panel
+const getAdminProducts = async (req, res) => {
+    try {
+        const products = await prisma.product.findMany({
+            include: {
+                seller: { select: { id: true, fullName: true, storeName: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error("Admin Get Products Error:", error);
+        res.status(500).json({ message: "Failed to fetch products registry." });
+    }
+};
+
+// Handle product approval or rejection status updates
+const verifyProduct = async (req, res) => {
+    try {
+        const { productId, status } = req.body;
+
+        if (!productId || !['APPROVED', 'REJECTED', 'PENDING'].includes(status)) {
+            return res.status(400).json({ message: "Invalid product ID or status value." });
+        }
+
+        const updatedProduct = await prisma.product.update({
+            where: { id: parseInt(productId) },
+            data: { status: status }
+        });
+
+        res.status(200).json({ message: "Product status successfully modified.", product: updatedProduct });
+    } catch (error) {
+        console.error("Admin Verify Product Error:", error);
+        res.status(500).json({ message: "Failed to update product verification status." });
+    }
+};
+
+// Retrieve all registered platform users for admin controls
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: { id: true, email: true, fullName: true, role: true, storeName: true, isBanned: true, createdAt: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Admin Get Users Error:", error);
+        res.status(500).json({ message: "Failed to fetch users registry." });
+    }
+};
+
+// Toggle suspension and ban restriction state on any user account
+const toggleUserBan = async (req, res) => {
+    try {
+        const { userId, isBanned } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: { isBanned: Boolean(isBanned) }
+        });
+
+        res.status(200).json({ message: "User account restriction status updated successfully.", user: updatedUser });
+    } catch (error) {
+        console.error("Admin Toggle Ban Error:", error);
+        res.status(500).json({ message: "Failed to apply restriction on user account." });
+    }
+};
+
+// Mutate and update user roles globally within the platform system
+const updateUserRole = async (req, res) => {
+    try {
+        const { userId, role } = req.body;
+
+        if (!['BUYER', 'SELLER', 'ADMIN'].includes(role)) {
+            return res.status(400).json({ message: "Invalid role value." });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: { role }
+        });
+
+        res.status(200).json({ message: "User access authorization role modified.", user: updatedUser });
+    } catch (error) {
+        console.error("Admin Shift Role Error:", error);
+        res.status(500).json({ message: "Failed to modify user access role structure." });
+    }
+};
+
+// Fetch comprehensive financial transaction logs across the shop system
+const getAllTransactions = async (req, res) => {
+    try {
+        const transactions = await prisma.transaction.findMany({
+            include: {
+                order: { include: { buyer: { select: { fullName: true, email: true } } } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(transactions);
+    } catch (error) {
+        console.error("Admin Get Transactions Error:", error);
+        res.status(500).json({ message: "Failed to fetch transaction logs." });
+    }
+};
+
+module.exports = { 
+    getAdminProducts, 
+    verifyProduct, 
+    getAllUsers, 
+    toggleUserBan, 
+    updateUserRole, 
+    getAllTransactions 
+};
+</file>
+
+<file path="backend/controllers/sellerController.js">
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Create any digital product (Course, Book, or License)
+const createProduct = async (req, res) => {
+    try {
+        const { title, description, price, category, fileUrl } = req.body;
+        const sellerId = req.user.userId;
+
+        if (!title || !price || !category) {
+            return res.status(400).json({ message: "وارد کردن عنوان، قیمت و دسته‌بندی الزامی است." });
+        }
+
+        if (category !== 'License' && !fileUrl) {
+            return res.status(400).json({ message: "برای این نوع محصول، وارد کردن لینک فایل یا استریم الزامی است." });
+        }
+
+        const newProduct = await prisma.product.create({
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                fileUrl: category === 'License' ? '' : fileUrl,
+                status: 'PENDING',
+                sellerId: sellerId
+            }
+        });
+
+        res.status(201).json({
+            message: "محصول با موفقیت ثبت شد و در انتظار تایید مدیریت است.",
+            product: newProduct
+        });
+    } catch (error) {
+        console.error("Seller Create Product Core Error:", error);
+        res.status(500).json({ message: "خطا در ثبت محصول جدید در پایگاه داده." });
+    }
+};
+
+// Fetch store statistics, charts context, and clients registry
+const getSellerAnalytics = async (req, res) => {
+    try {
+        const sellerId = req.user.userId;
+
+        const products = await prisma.product.findMany({
+            where: { sellerId },
+            include: {
+                reviews: { include: { user: { select: { fullName: true, email: true } } } },
+                orderItems: { include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } } }
+            }
+        });
+
+        let totalEarnings = 0;
+        let totalSales = 0;
+        const customersMap = new Map();
+        const recentReviews = [];
+
+        products.forEach(product => {
+            product.orderItems.forEach(item => {
+                if (item.order.status === 'COMPLETED') {
+                    totalEarnings += item.price;
+                    totalSales += 1;
+                    const buyer = item.order.buyer;
+                    if (buyer) {
+                        customersMap.set(buyer.email, {
+                            fullName: buyer.fullName,
+                            email: buyer.email,
+                            productTitle: product.title,
+                            purchaseDate: item.order.createdAt
+                        });
+                    }
+                }
+            });
+
+            product.reviews.forEach(review => {
+                recentReviews.push({
+                    id: review.id,
+                    rating: review.rating,
+                    comment: review.comment,
+                    productTitle: product.title,
+                    buyerName: review.user.fullName,
+                    createdAt: review.createdAt
+                });
+            });
+        });
+
+        recentReviews.sort((a, b) => b.createdAt - a.createdAt);
+
+        const monthlyData = [
+            { month: 'فروردین', sales: Math.round(totalSales * 0.1), earnings: Math.round(totalEarnings * 0.1) },
+            { month: 'اردیبهشت', sales: Math.round(totalSales * 0.15), earnings: Math.round(totalEarnings * 0.15) },
+            { month: 'خرداد', sales: Math.round(totalSales * 0.2), earnings: Math.round(totalEarnings * 0.2) },
+            { month: 'تیر', sales: Math.round(totalSales * 0.55), earnings: Math.round(totalEarnings * 0.55) },
+        ];
+
+        res.status(200).json({
+            productsCount: products.length,
+            totalEarnings,
+            totalSales,
+            products: products.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category, status: p.status, description: p.description, fileUrl: p.fileUrl })),
+            customers: Array.from(customersMap.values()),
+            recentReviews: recentReviews.slice(0, 5),
+            monthlyData
+        });
+    } catch (error) {
+        console.error("Seller Analytics Extraction Error:", error);
+        res.status(500).json({ message: "Failed to extract seller performance metrics." });
+    }
+};
+
+// Modify product properties
+const updateProduct = async (req, res) => {
+    try {
+        const { productId, title, description, price, category } = req.body;
+        const sellerId = req.user.userId;
+
+        const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
+
+        if (!product || product.sellerId !== sellerId) {
+            return res.status(403).json({ message: "Unauthorized operation on this asset resource." });
+        }
+
+        const updatedProduct = await prisma.product.update({
+            where: { id: parseInt(productId) },
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                status: 'PENDING'
+            }
+        });
+
+        res.status(200).json({ message: "Product modified successfully and returned to queue.", product: updatedProduct });
+    } catch (error) {
+        console.error("Seller Edit Product Exception:", error);
+        res.status(500).json({ message: "Failed to modify product attributes." });
+    }
+};
+
+module.exports = { createProduct, getSellerAnalytics, updateProduct };
+</file>
+
 <file path="backend/.gitignore">
 node_modules
 /generated/prisma
 .env
 </file>
 
+<file path="frontend/src/components/UserMenu.jsx">
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+
+export default function UserMenu({ user, onLogout }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link to="/login" className="text-xs md:text-sm font-black text-gray-600 hover:text-[#6d28d9] transition-colors px-3 py-2 rounded-xl hover:bg-gray-50">
+          ورود
+        </Link>
+        <Link to="/register" className="px-4 py-2.5 bg-gradient-to-r from-[#6320ee] to-[#7c3aed] text-white text-xs md:text-sm font-black rounded-xl hover:shadow-md transition-all active:scale-95">
+          ثبت نام
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 border border-purple-100 bg-gradient-to-r from-purple-50/40 to-indigo-50/40 p-1.5 md:p-2 md:pr-5 rounded-xl shadow-xs cursor-pointer hover:border-purple-200 transition-all active:scale-95"
+      >
+        <div className="hidden lg:flex flex-col text-right">
+          <span className="text-sm font-black text-gray-900">{user.fullName}</span>
+          <span className="text-xs font-bold text-purple-600 mt-0.5">
+            {user.role === 'ADMIN' ? 'مدیر سیستم' : user.role === 'SELLER' ? 'فروشنده' : 'خریدار'}
+          </span>
+        </div>
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#6320ee] to-[#863bff] text-white font-black text-sm flex justify-center items-center">
+          {user.fullName ? user.fullName.charAt(0) : 'U'}
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-3 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden text-right transform origin-top-left transition-all duration-200 ease-out animate-in fade-in zoom-in-95 slide-in-from-top-2">
+          
+          <div className="p-4 bg-gradient-to-b from-purple-50/30 to-transparent border-b border-gray-50 lg:hidden">
+            <p className="text-xs font-black text-gray-900">{user.fullName}</p>
+            <p className="text-[10px] font-bold text-purple-600 mt-1">نقش: {user.role}</p>
+          </div>
+          
+          <div className="p-1.5 flex flex-col gap-0.5">
+            {/* 1. Universal Library Link (Everyone needs to see their purchases) */}
+            <Link 
+              to="/buyer/dashboard" 
+              onClick={() => setIsOpen(false)} 
+              className="w-full text-right px-4 py-3 text-xs font-black text-gray-800 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors"
+            >
+              📚 کتابخانه محصولات من
+            </Link>
+
+            {/* 2. Role-specific Dashboards */}
+            {user.role === 'ADMIN' && (
+              <Link to="/admin/dashboard" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-3 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
+                🛠️ پنل مدیریت سیستم
+              </Link>
+            )}
+            
+            {user.role === 'SELLER' && (
+              <Link to="/seller/dashboard" onClick={() => setIsOpen(false)} className="w-full text-right px-4 py-3 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors">
+                📈 داشبورد فروشندگان
+              </Link>
+            )}
+            
+            <Link 
+              to="/settings" 
+              onClick={() => setIsOpen(false)} 
+              className="w-full text-right px-4 py-3 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-[#6d28d9] rounded-xl transition-colors"
+            >
+              ⚙️ تنظیمات حساب
+            </Link>
+            
+            <div className="border-t border-gray-50 my-1" />
+            
+            <button 
+              onClick={() => { setIsOpen(false); onLogout(); }}
+              className="w-full text-right px-4 py-3 text-xs font-black text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+            >
+              ✕ خروج از حساب
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/src/index.css">
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+@import "tailwindcss";
+
+@layer base {
+  html, body, #root {
+    font-family: 'Vazirmatn', sans-serif !important;
+    background-color: #f8f8fc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+}
+</file>
+
+<file path="README.md">
+# Software Engineering Course 2026
+
+## Development Team
+
+| Name | Student ID |
+| :--- | :--- |
+| Erfan Panjeshaahi | 402243046 |
+| Rouzbeh Soltani | 402243072 |
+| Mahan Baneshi | 402243042 |
+| Seyed Mahdi Mirmotahari | 402243106 |
+</file>
+
+<file path="backend/controllers/orderController.js">
+const { PrismaClient } = require('@prisma/client');
+const crypto = require('crypto');
+const axios = require('axios');
+const prisma = new PrismaClient();
+
+// Use Zarinpal Sandbox for GitHub portfolio and testing
+const ZARINPAL_MERCHANT_ID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+const ZARINPAL_REQUEST_URL = "https://sandbox.zarinpal.com/pg/v4/payment/request.json";
+const ZARINPAL_VERIFY_URL = "https://sandbox.zarinpal.com/pg/v4/payment/verify.json";
+const ZARINPAL_STARTPAY_URL = "https://sandbox.zarinpal.com/pg/StartPay/";
+
+const generateLicenseKey = (productTitle) => {
+    const prefix = productTitle.substring(0, 4).toUpperCase().padEnd(4, 'X');
+    const randomHex = crypto.randomBytes(6).toString('hex').toUpperCase();
+    return `${prefix}-${randomHex.slice(0, 4)}-${randomHex.slice(4, 8)}-${randomHex.slice(8, 12)}`;
+};
+
+// Step 1: Request Payment
+const requestPayment = async (req, res) => {
+    try {
+        const { productIds } = req.body; 
+        const buyerId = req.user.userId;
+
+        if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+            return res.status(400).json({ message: "سبد خرید خالی است." });
+        }
+
+        const products = await prisma.product.findMany({
+            where: { id: { in: productIds.map(id => parseInt(id)) } }
+        });
+
+        if (products.length !== productIds.length) {
+            return res.status(404).json({ message: "برخی محصولات یافت نشدند." });
+        }
+
+        const totalAmount = products.reduce((sum, product) => sum + product.price, 0);
+
+        // 1. Create Order with PENDING status
+        const order = await prisma.order.create({
+            data: {
+                buyerId: buyerId,
+                totalAmount: totalAmount,
+                status: 'PENDING',
+                items: {
+                    create: products.map(p => ({ productId: p.id, price: p.price }))
+                }
+            }
+        });
+
+        // 2. Request Authority from Zarinpal Sandbox
+        const zarinpalRes = await axios.post(ZARINPAL_REQUEST_URL, {
+            merchant_id: ZARINPAL_MERCHANT_ID,
+            amount: totalAmount * 10, // Zarinpal works with Rial
+            description: `پرداخت سفارش ${order.id} در دیجی‌استور`,
+            callback_url: `http://localhost:5000/api/orders/verify`
+        });
+
+        if (zarinpalRes.data.data.code === 100) {
+            const authority = zarinpalRes.data.data.authority;
+
+            // 3. Save Transaction logically
+            await prisma.transaction.create({
+                data: {
+                    orderId: order.id,
+                    amount: totalAmount,
+                    paymentMethod: 'ZARINPAL',
+                    status: 'PENDING',
+                    authority: authority
+                }
+            });
+
+            // Return payment URL to frontend
+            return res.status(200).json({ 
+                paymentUrl: `${ZARINPAL_STARTPAY_URL}${authority}` 
+            });
+        } else {
+            return res.status(500).json({ message: "خطا در اتصال به درگاه پرداخت." });
+        }
+    } catch (error) {
+        console.error("Payment Request Error:", error);
+        res.status(500).json({ message: "خطای سرور در ایجاد تراکنش." });
+    }
+};
+
+// Step 3: Verify Payment (Callback from Bank)
+const verifyPayment = async (req, res) => {
+    try {
+        const { Authority, Status } = req.query;
+
+        if (!Authority) {
+            return res.redirect('http://localhost:5173/payment-result?status=failed');
+        }
+
+        const transaction = await prisma.transaction.findUnique({
+            where: { authority: Authority },
+            include: { order: { include: { items: { include: { product: true } } } } }
+        });
+
+        if (!transaction || transaction.status === 'SUCCESS') {
+            return res.redirect('http://localhost:5173/payment-result?status=invalid');
+        }
+
+        if (Status !== 'OK') {
+            await prisma.transaction.update({ where: { id: transaction.id }, data: { status: 'FAILED' }});
+            await prisma.order.update({ where: { id: transaction.orderId }, data: { status: 'FAILED' }});
+            return res.redirect('http://localhost:5173/payment-result?status=failed');
+        }
+
+        const verifyRes = await axios.post(ZARINPAL_VERIFY_URL, {
+            merchant_id: ZARINPAL_MERCHANT_ID,
+            amount: transaction.amount * 10,
+            authority: Authority
+        });
+
+        if (verifyRes.data.data.code === 100 || verifyRes.data.data.code === 101) {
+            await prisma.$transaction(async (tx) => {
+                await tx.transaction.update({ where: { id: transaction.id }, data: { status: 'SUCCESS' }});
+                await tx.order.update({ where: { id: transaction.orderId }, data: { status: 'COMPLETED' }});
+
+                for (const item of transaction.order.items) {
+                    await tx.license.create({
+                        data: {
+                            licenseKey: generateLicenseKey(item.product.title),
+                            productId: item.productId,
+                            orderItemId: item.id,
+                            isValid: true
+                        }
+                    });
+                }
+            });
+            // Successful payment route
+            return res.redirect('http://localhost:5173/payment-result?status=success');
+        } else {
+            await prisma.transaction.update({ where: { id: transaction.id }, data: { status: 'FAILED' }});
+            await prisma.order.update({ where: { id: transaction.orderId }, data: { status: 'FAILED' }});
+            return res.redirect('http://localhost:5173/payment-result?status=failed');
+        }
+
+    } catch (error) {
+        console.error("Verification Error:", error);
+        return res.redirect('http://localhost:5173/payment-result?status=error');
+    }
+};
+
+const getMyOrders = async (req, res) => {
+    try {
+        const buyerId = req.user.userId;
+        const orders = await prisma.order.findMany({
+            where: { buyerId: buyerId },
+            include: {
+                items: { include: { product: true, license: true } },
+                transaction: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch orders." });
+    }
+};
+
+module.exports = { requestPayment, verifyPayment, getMyOrders };
+</file>
+
 <file path="frontend/src/components/Navbar.jsx">
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import UserMenu from './UserMenu';
 import MobileDrawer from './MobileDrawer';
+import { CartContext } from '../context/CartContext';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -2782,6 +3892,8 @@ export default function Navbar() {
   const location = useLocation();
   const dropdownRef = useRef(null);
   const mobileSearchRef = useRef(null);
+
+  const { cart, getCartTotal, removeFromCart } = useContext(CartContext);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -2938,6 +4050,56 @@ export default function Navbar() {
             </svg>
           </button>
 
+          {/* Cart Dropdown Module - Now visible on mobile */}
+          <div className="relative group">
+            <Link to="/cart" className="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-50/50 hover:bg-purple-100 text-[#6d28d9] transition-all relative">
+              <span className="text-lg">🛒</span>
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-sm">
+                  {cart.length}
+                </span>
+              )}
+            </Link>
+
+            {/* Hover Dropdown Interface - Hidden on mobile, visible on sm desktop and up */}
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible sm:group-hover:opacity-100 sm:group-hover:visible transition-all duration-300 transform origin-top-left z-50 text-right hidden sm:flex flex-col">
+              <div className="p-3 border-b border-gray-50 flex justify-between items-center">
+                <span className="text-xs font-black text-gray-900">سبد خرید شما</span>
+                <span className="text-[10px] font-bold text-gray-400">{cart.length} محصول</span>
+              </div>
+              
+              <div className="max-h-60 overflow-y-auto p-2">
+                {cart.length === 0 ? (
+                  <p className="text-center text-xs text-gray-400 font-bold py-6">سبد خرید خالی است.</p>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center p-2 hover:bg-purple-50 rounded-xl transition-colors group/item">
+                      <div className="flex flex-col truncate ml-2">
+                        <span className="text-xs font-black text-gray-900 truncate">{item.title}</span>
+                        <span className="text-[10px] font-bold text-[#6d28d9] mt-0.5">{item.price.toLocaleString('en-US')} تومان</span>
+                      </div>
+                      <button onClick={(e) => { e.preventDefault(); removeFromCart(item.id); }} className="text-red-400 hover:text-red-600 text-xs font-bold opacity-0 group-hover/item:opacity-100 transition-opacity p-1 cursor-pointer">
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {cart.length > 0 && (
+                <div className="p-3 border-t border-gray-50 bg-gray-50/50 rounded-b-2xl">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[11px] font-bold text-gray-500">جمع کل:</span>
+                    <span className="text-xs font-black text-gray-900">{getCartTotal().toLocaleString('en-US')} تومان</span>
+                  </div>
+                  <Link to="/cart" className="block w-full py-2.5 text-center bg-[#6320ee] hover:bg-[#521ac4] text-white text-xs font-black rounded-xl transition-colors shadow-sm active:scale-95 cursor-pointer">
+                    مشاهده فاکتور و پرداخت
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Render Component-Based Modular User Action Trigger Menu */}
           <UserMenu user={user} onLogout={handleLogout} />
         </div>
@@ -2958,7 +4120,7 @@ export default function Navbar() {
             />
             <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
           </div>
-          <button onClick={() => { setIsSearchBarOpen(false); setSearchQuery(''); }} className="p-2 text-gray-400 hover:text-gray-600 text-sm font-bold">بستن</button>
+          <button onClick={() => { setIsSearchBarOpen(false); setSearchQuery(''); }} className="p-2 text-gray-400 hover:text-gray-600 text-sm font-bold cursor-pointer">بستن</button>
 
           {searchQuery.trim().length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl overflow-hidden flex flex-col z-50 max-h-64 overflow-y-auto">
@@ -3016,13 +4178,18 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
 
+  // Load administrative workspace context smoothly from DB
   const loadAdminData = async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     else setIsSilentUpdating(true);
 
     const token = localStorage.getItem('token');
+    
+    // Dynamically query target endpoints based on the active UI tab selection state
+    const endpointPath = activeTab === 'pending' ? 'products' : 'users';
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${activeTab === 'pending' ? 'pending-products' : 'users'}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${endpointPath}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -3042,34 +4209,49 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadAdminData(false); }, [activeTab]);
 
+  // Execute product verification with safe error handling
   const handleVerify = async (productId, status) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ productId, status })
-    });
-    if (response.ok) loadAdminData(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ productId, status })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+      console.error("Verification failed:", error);
+    }
   };
 
+  // Execute user ban toggle with safe error handling
   const handleToggleBan = async (userId, isBanned) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ userId, isBanned })
-    });
-    if (response.ok) loadAdminData(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, isBanned })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+      console.error("Ban toggle failed:", error);
+    }
   };
 
+  // Execute role mutation with safe error handling
   const handleRoleChange = async (userId, role) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ userId, role })
-    });
-    if (response.ok) loadAdminData(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, role })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+       console.error("Role change failed:", error);
+    }
   };
 
   return (
@@ -3123,15 +4305,23 @@ import AuthLayout from '../components/AuthLayout';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Custom Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
   const navigate = useNavigate();
 
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    // Hide toast automatically after 3.5 seconds if no redirect happens
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3500);
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setToast({ show: false, message: '', type: '' }); // Reset toast
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
@@ -3147,39 +4337,43 @@ export default function Login() {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        setSuccessMessage(`خوش آمدید ${data.user.fullName}! ${data.message}`);
         
+        showToast(`خوش آمدید ${data.user.fullName}!`, 'success');
+        
+        // Role-based redirection after a short delay
         setTimeout(() => {
-          navigate('/');
+          if (data.user.role === 'ADMIN') {
+            navigate('/admin/dashboard');
+          } else if (data.user.role === 'SELLER') {
+            navigate('/seller/dashboard');
+          } else {
+            navigate('/'); // BUYER redirects to home
+          }
         }, 1500);
       } else {
-        setErrorMessage(data.message);
+        showToast(data.message, 'error');
       }
     } catch (error) {
       console.error('Network failure details:', error);
-      setErrorMessage('خطا در اتصال به سرور. مطمئن شوید بک‌اَند روشن است.');
+      showToast('خطا در اتصال به سرور. مطمئن شوید بک‌اَند روشن است.', 'error');
     }
   };
 
   return (
     <AuthLayout>
+      {/* Animated Top Toast Notification */}
+      <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100000] px-5 py-3 rounded-xl shadow-2xl transition-all duration-500 ease-out flex items-center gap-3 text-xs font-black ${
+        toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+      } ${
+        toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'
+      }`}>
+        <span className="text-base">{toast.type === 'success' ? '✅' : '⚠️'}</span>
+        {toast.message}
+      </div>
+
       <div className="w-full max-w-sm p-5">
         <h2 className="text-2xl font-black mb-2 text-gray-900 tracking-tight">خوش برگشتید</h2>
         <p className="text-gray-400 mb-8 text-xs font-medium">برای ادامه مدیریت دارایی‌ها وارد حساب خود شوید</p>
-
-        {successMessage && (
-          <div className="mb-5 p-3.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>✓</span>
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>⚠</span>
-            <span>{errorMessage}</span>
-          </div>
-        )}
 
         <form onSubmit={handleLoginSubmit} className="space-y-4">
           <div>
@@ -3215,279 +4409,6 @@ export default function Login() {
           هنوز حساب کاربری ندارید؟{' '}
           <Link to="/register" className="text-[#6320ee] hover:underline font-black">
             ثبت‌نام رایگان بازارچه
-          </Link>
-        </p>
-      </div>
-    </AuthLayout>
-  );
-}
-</file>
-
-<file path="frontend/src/index.css">
-@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
-@import "tailwindcss";
-
-@layer base {
-  html, body, #root {
-    font-family: 'Vazirmatn', sans-serif !important;
-    background-color: #f8f8fc;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-}
-</file>
-
-<file path="README.md">
-# Software Engineering Course 2026
-
-## Development Team
-
-| Name | Student ID |
-| :--- | :--- |
-| Erfan Panjeshaahi | 402243046 |
-| Rouzbeh Soltani | 402243072 |
-| Mahan Baneshi | 402243042 |
-| Seyed Mahdi Mirmotahari | 402243106 |
-</file>
-
-<file path="backend/controllers/productController.js">
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-// Public Action: Fetch marketplace approved item indexation structure
-const getAllPublicProducts = async (req, res) => {
-    try {
-        const { search } = req.query;
-        const products = await prisma.product.findMany({
-            where: {
-                status: 'APPROVED',
-                ...(search && {
-                    OR: [
-                        { title: { contains: search, mode: 'insensitive' } },
-                        { description: { contains: search, mode: 'insensitive' } }
-                    ]
-                })
-            },
-            include: {
-                seller: { select: { fullName: true, storeName: true } }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(products);
-    } catch (error) {
-        console.error("Get All Public Products Catalog Error:", error);
-        res.status(500).json({ message: "Failed to fetch marketplace catalog database logs." });
-    }
-};
-
-module.exports = { getAllPublicProducts };
-</file>
-
-<file path="backend/routes/productRoutes.js">
-const express = require('express');
-const router = express.Router();
-const { getAllPublicProducts } = require('../controllers/productController');
-
-router.get('/', getAllPublicProducts);
-
-module.exports = router;
-</file>
-
-<file path="frontend/src/pages/Register.jsx">
-import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import AuthLayout from '../components/AuthLayout';
-
-export default function Register() {
-  const [searchParams] = useSearchParams();
-  const defaultRole = searchParams.get('role') === 'SELLER' ? 'SELLER' : 'BUYER';
-
-  const [role, setRole] = useState(defaultRole);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const [storeName, setStoreName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('');
-
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  
-  const navigate = useNavigate();
-
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
-
-    const payload = {
-        fullName,
-        email,
-        password,
-        role,
-        ...(role === 'SELLER' && { storeName, phone, bio })
-    };
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-        
-        setSuccessMessage(data.message);
-        
-        setTimeout(() => {
-          navigate('/');
-        }, 1500);
-      } else {
-        setErrorMessage(data.message);
-      }
-    } catch (error) {
-      console.error('Registration network error:', error);
-      setErrorMessage('خطا در اتصال به سرور. مطمئن شوید بک اند روشن است.');
-    }
-  };
-
-  return (
-    <AuthLayout>
-      <div className="w-full max-w-sm p-5 py-12 z-10">
-        <h2 className="text-2xl font-black mb-2 text-gray-900 tracking-tight">ایجاد حساب کاربری</h2>
-        <p className="text-gray-400 mb-6 text-xs font-medium">لطفا نوع حساب خود را انتخاب کنید</p>
-
-        <div className="flex p-1 bg-gray-100 rounded-xl mb-8">
-          <button
-            type="button"
-            onClick={() => setRole('BUYER')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              role === 'BUYER' ? 'bg-white text-[#6320ee] shadow-sm' : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            خریدار هستم
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole('SELLER')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              role === 'SELLER' ? 'bg-white text-[#6320ee] shadow-sm' : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            فروشنده هستم
-          </button>
-        </div>
-
-        {successMessage && (
-          <div className="mb-5 p-3.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>✓</span>
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2">
-            <span>⚠</span>
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleRegisterSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">نام و نام خانوادگی کامل</label>
-            <input 
-              type="text" 
-              placeholder="مثال: رضا سلطانی"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">ادرس ایمیل</label>
-            <input 
-              type="email" 
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">رمز عبور امنیتی</label>
-            <input 
-              type="password" 
-              placeholder="حداقل 8 کاراکتر ترکیبی"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
-              required 
-            />
-          </div>
-
-          {role === 'SELLER' && (
-            <div className="space-y-4 pt-4 border-t border-gray-100 mt-4">
-              <p className="text-xs font-black text-[#6d28d9] mb-2">اطلاعات تکمیلی فروشگاه</p>
-              
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2">نام فروشگاه یا برند</label>
-                <input 
-                  type="text" 
-                  placeholder="مثال: اکادمی برنامه نویسی"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
-                  required={role === 'SELLER'} 
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2">شماره تماس (اختیاری)</label>
-                <input 
-                  type="text" 
-                  placeholder="09120000000"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
-                  dir="ltr"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات کوتاه فروشنده</label>
-                <textarea 
-                  placeholder="درباره تخصص و محصولات خود بنویسید..."
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold h-24 resize-none"
-                ></textarea>
-              </div>
-            </div>
-          )}
-
-          <button type="submit" className="w-full py-3.5 bg-[#6320ee] hover:bg-[#4b14b8] text-white font-black rounded-xl transition-all text-xs shadow-lg shadow-purple-100 cursor-pointer mt-6">
-            تایید و ایجاد حساب کاربری ←
-          </button>
-        </form>
-
-        <p className="mt-8 text-center text-xs text-gray-500 font-medium mb-10">
-          قبلا در پلتفرم ثبت نام کرده اید؟{' '}
-          <Link to="/login" className="text-[#6320ee] hover:underline font-black">
-            ورود به حساب
           </Link>
         </p>
       </div>
@@ -3636,6 +4557,285 @@ export default function SellerDashboard() {
 }
 </file>
 
+<file path="backend/controllers/productController.js">
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Fetch marketplace approved item indexation structure with limit support
+const getAllPublicProducts = async (req, res) => {
+    try {
+        const { search, limit } = req.query; // Extract limit from query
+        const products = await prisma.product.findMany({
+            where: {
+                status: 'APPROVED',
+                ...(search && {
+                    OR: [
+                        { title: { contains: search, mode: 'insensitive' } },
+                        { description: { contains: search, mode: 'insensitive' } }
+                    ]
+                })
+            },
+            include: {
+                seller: { select: { fullName: true, storeName: true } }
+            },
+            orderBy: { createdAt: 'desc' },
+            ...(limit && { take: parseInt(limit) }) // Apply strict limit to DB query if provided
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error("Get All Public Products Catalog Error:", error);
+        res.status(500).json({ message: "Failed to fetch marketplace catalog database logs." });
+    }
+};
+
+// Fetch a single product by its ID for the product details page
+const getProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await prisma.product.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                seller: { select: { fullName: true, storeName: true } }
+            }
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: "محصول مورد نظر یافت نشد." });
+        }
+
+        res.status(200).json(product);
+    } catch (error) {
+        console.error("Get Product By ID Error:", error);
+        res.status(500).json({ message: "خطا در دریافت اطلاعات محصول از پایگاه داده." });
+    }
+};
+
+module.exports = { getAllPublicProducts, getProductById };
+</file>
+
+<file path="backend/routes/productRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { getAllPublicProducts, getProductById } = require('../controllers/productController');
+
+// Map the endpoints
+router.get('/', getAllPublicProducts);
+router.get('/:id', getProductById); // Added the missing route
+
+module.exports = router;
+</file>
+
+<file path="frontend/src/pages/Register.jsx">
+import React, { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
+
+export default function Register() {
+  const [searchParams] = useSearchParams();
+  const defaultRole = searchParams.get('role') === 'SELLER' ? 'SELLER' : 'BUYER';
+
+  const [role, setRole] = useState(defaultRole);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [storeName, setStoreName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
+
+  // Custom Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
+  const navigate = useNavigate();
+
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3500);
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    setToast({ show: false, message: '', type: '' });
+
+    const payload = {
+        fullName,
+        email,
+        password,
+        role,
+        ...(role === 'SELLER' && { storeName, phone, bio })
+    };
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+        
+        showToast(data.message, 'success');
+        
+        // Role-based redirection after registration
+        setTimeout(() => {
+          if (data.user.role === 'ADMIN') {
+            navigate('/admin/dashboard');
+          } else if (data.user.role === 'SELLER') {
+            navigate('/seller/dashboard');
+          } else {
+            navigate('/'); // BUYER redirects to home
+          }
+        }, 1500);
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch (error) {
+      console.error('Registration network error:', error);
+      showToast('خطا در اتصال به سرور. مطمئن شوید بک‌اند روشن است.', 'error');
+    }
+  };
+
+  return (
+    <AuthLayout>
+      {/* Animated Top Toast Notification */}
+      <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100000] px-5 py-3 rounded-xl shadow-2xl transition-all duration-500 ease-out flex items-center gap-3 text-xs font-black ${
+        toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+      } ${
+        toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'
+      }`}>
+        <span className="text-base">{toast.type === 'success' ? '✅' : '⚠️'}</span>
+        {toast.message}
+      </div>
+
+      <div className="w-full max-w-sm p-5 py-12 z-10">
+        <h2 className="text-2xl font-black mb-2 text-gray-900 tracking-tight">ایجاد حساب کاربری</h2>
+        <p className="text-gray-400 mb-6 text-xs font-medium">لطفا نوع حساب خود را انتخاب کنید</p>
+
+        <div className="flex p-1 bg-gray-100 rounded-xl mb-8">
+          <button
+            type="button"
+            onClick={() => setRole('BUYER')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              role === 'BUYER' ? 'bg-white text-[#6320ee] shadow-sm' : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            خریدار هستم
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('SELLER')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              role === 'SELLER' ? 'bg-white text-[#6320ee] shadow-sm' : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            فروشنده هستم
+          </button>
+        </div>
+
+        <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">نام و نام خانوادگی کامل</label>
+            <input 
+              type="text" 
+              placeholder="مثال: رضا سلطانی"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
+              required 
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">ادرس ایمیل</label>
+            <input 
+              type="email" 
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
+              required 
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">رمز عبور امنیتی</label>
+            <input 
+              type="password" 
+              placeholder="حداقل 8 کاراکتر ترکیبی"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
+              required 
+            />
+          </div>
+
+          {role === 'SELLER' && (
+            <div className="space-y-4 pt-4 border-t border-gray-100 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="text-xs font-black text-[#6d28d9] mb-2">اطلاعات تکمیلی فروشگاه</p>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">نام فروشگاه یا برند</label>
+                <input 
+                  type="text" 
+                  placeholder="مثال: اکادمی برنامه نویسی"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
+                  required={role === 'SELLER'} 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">شماره تماس (اختیاری)</label>
+                <input 
+                  type="text" 
+                  placeholder="09120000000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold"
+                  dir="ltr"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات کوتاه فروشنده</label>
+                <textarea 
+                  placeholder="درباره تخصص و محصولات خود بنویسید..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#6320ee] transition-all text-xs font-semibold h-24 resize-none"
+                ></textarea>
+              </div>
+            </div>
+          )}
+
+          <button type="submit" className="w-full py-3.5 bg-[#6320ee] hover:bg-[#4b14b8] text-white font-black rounded-xl transition-all text-xs shadow-lg shadow-purple-100 cursor-pointer mt-6">
+            تایید و ایجاد حساب کاربری ←
+          </button>
+        </form>
+
+        <p className="mt-8 text-center text-xs text-gray-500 font-medium mb-10">
+          قبلا در پلتفرم ثبت نام کرده اید؟{' '}
+          <Link to="/login" className="text-[#6320ee] hover:underline font-black">
+            ورود به حساب
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
+  );
+}
+</file>
+
 <file path="backend/controllers/authController.js">
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -3645,7 +4845,6 @@ const prisma = new PrismaClient();
 // Register a new user and handle extra fields for sellers
 const registerUser = async (req, res) => {
     try {
-        // Extract all fields from request body including the new seller ones
         const { email, password, fullName, role, storeName, phone, bio } = req.body;
 
         if (!email || !password || !fullName) {
@@ -3662,7 +4861,6 @@ const registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create the user and inject the optional seller details if they exist
         const newUser = await prisma.user.create({
             data: {
                 email: email,
@@ -3699,6 +4897,7 @@ const registerUser = async (req, res) => {
     }
 };
 
+// Login user with ban check and role routing
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -3713,6 +4912,11 @@ const loginUser = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({ message: "ایمیل یا رمز عبور اشتباه است." });
+        }
+
+        // Check if the user is banned before checking passwords
+        if (user.isBanned) {
+            return res.status(403).json({ message: "حساب کاربری شما توسط مدیریت مسدود شده است." });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -3892,6 +5096,7 @@ model Transaction {
   amount        Float
   paymentMethod String
   status        String
+  authority     String?   @unique
   createdAt     DateTime  @default(now())
 
   order         Order     @relation(fields: [orderId], references: [id])
@@ -3925,6 +5130,7 @@ model Review {
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "axios": "^1.18.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -3946,6 +5152,7 @@ model Review {
 <file path="frontend/src/App.jsx">
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -3954,30 +5161,41 @@ import Marketplace from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
 import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Settings from './pages/Settings';
+import Cart from './pages/Cart';
+import BuyerDashboard from './pages/BuyerDashboard';
+import PaymentResult from './pages/PaymentResult';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/product/:id" element={<ProductDetails />} />
-        
-        <Route path="/seller/dashboard" element={<SellerDashboard />} />
-        
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+    <CartProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          
+          <Route path="/seller/dashboard" element={<SellerDashboard />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/settings" element={<Settings />} />
 
-        <Route path="*" element={
-          <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
-            <h1 className="text-5xl font-black mb-2 text-[#6d28d9]">۴۰۴</h1>
-            <p className="text-gray-500 font-medium text-sm">صفحه مورد نظر در بازارچه یافت نشد!</p>
-          </div>
-        } />
-      </Routes>
-    </BrowserRouter>
+          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
+
+          <Route path="/payment-result" element={<PaymentResult />} />
+
+          <Route path="*" element={
+            <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+              <h1 className="text-5xl font-black mb-2 text-[#6d28d9]">۴۰۴</h1>
+              <p className="text-gray-500 font-medium text-sm">صفحه مورد نظر در بازارچه یافت نشد!</p>
+            </div>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </CartProvider>
   );
 }
 </file>
@@ -3992,6 +5210,8 @@ const productRouter = require('./routes/productRoutes');
 const sellerRouter = require('./routes/sellerRoutes');
 const buyerRouter = require('./routes/buyerRoutes');
 const adminRouter = require('./routes/adminRoutes');
+const userRouter = require('./routes/userRoutes');
+const orderRouter = require('./routes/orderRoutes');
 
 const app = express();
 
@@ -4003,6 +5223,8 @@ app.use('/api/products', productRouter);
 app.use('/api/seller', sellerRouter);
 app.use('/api/buyer', buyerRouter);
 app.use('/api/admin', adminRouter); 
+app.use('/api/user', userRouter);
+app.use('/api/orders', orderRouter);
 
 app.get('/api/status', (req, res) => {
     res.json({ message: "System core refactored layout connected! 🚀" });

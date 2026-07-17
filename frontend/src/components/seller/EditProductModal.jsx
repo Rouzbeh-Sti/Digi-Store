@@ -6,16 +6,22 @@ export default function EditProductModal({ isOpen, onClose, product, onSave }) {
   const [price, setPrice] = useState(product?.price || '');
   const [category, setCategory] = useState(product?.category || 'Course');
   const [description, setDescription] = useState(product?.description || '');
+  const [allowSubscription, setAllowSubscription] = useState(product?.allowSubscription ?? true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  // Handle form submission and prevent state updates on unmounted component
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await onSave({ productId: product.id, title, price: parseFloat(price), category, description });
-    // State reset for isSubmitting removed to prevent React unmount warnings
+    await onSave({ 
+      productId: product.id, 
+      title, 
+      price: parseFloat(price), 
+      category, 
+      description,
+      allowSubscription: category === 'Course' ? allowSubscription : false
+    });
   };
 
   return createPortal(
@@ -42,6 +48,23 @@ export default function EditProductModal({ isOpen, onClose, product, onSave }) {
             <label className="block text-xs font-bold text-gray-700 mb-2">قیمت (تومان)</label>
             <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
           </div>
+
+          {/* Conditional Subscription Toggle (Only for Courses) */}
+          {category === 'Course' && (
+            <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100 flex items-center justify-between">
+              <div className="text-right">
+                <span className="block text-xs font-black text-gray-900">امکان دسترسی با خرید اشتراک</span>
+                <span className="text-[10px] text-gray-400 font-bold mt-1 block">دانشجویان دارای اشتراک فعال دیجی‌کورس به این دوره دسترسی داشته باشند؟</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={allowSubscription} 
+                onChange={(e) => setAllowSubscription(e.target.checked)}
+                className="w-5 h-5 accent-[#6320ee] cursor-pointer"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ProductCard from '../components/ProductCard';
 
 export default function Marketplace() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Read initial category filter from URL query string if present, default to 'All'
+  const initialCategory = searchParams.get('category') || 'All';
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  
   const [isLoading, setIsLoading] = useState(true);
 
-  // Array of available categories for the filter buttons
   const categories = ['All', 'Course', 'Book', 'License'];
 
-  // Fetch all products from the backend when the component mounts
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -30,7 +34,26 @@ export default function Marketplace() {
     fetchProducts();
   }, []);
 
-  // Filter the products based on both search text and selected category
+  // Sync state if URL query params change dynamically
+  useEffect(() => {
+    const catParam = searchParams.get('category');
+    if (catParam) {
+      setSelectedCategory(catParam);
+    } else {
+      setSelectedCategory('All');
+    }
+  }, [searchParams]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    if (cat === 'All') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', cat);
+    }
+    setSearchParams(searchParams);
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
@@ -45,10 +68,9 @@ export default function Marketplace() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">بازارچه محصولات</h1>
-            <p className="text-sm text-gray-500 mt-2 font-medium">جدید ترین دوره ها، نرم افزار ها و کتاب های دیجیتال</p>
+            <p className="text-sm text-gray-500 mt-2 font-medium">جدیدترین دوره‌ها، نرم‌افزارها و کتاب‌های دیجیتال</p>
           </div>
           
-          {/* Search Box input for filtering items */}
           <div className="w-full md:w-96 relative shadow-sm rounded-xl">
             <input 
               type="text" 
@@ -66,19 +88,18 @@ export default function Marketplace() {
           {categories.map((cat, index) => (
             <button
               key={index}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => handleCategoryChange(cat)}
               className={`px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === cat 
                   ? 'bg-[#6320ee] text-white shadow-md' 
                   : 'bg-white text-gray-600 border border-gray-200 hover:border-[#6320ee] hover:text-[#6320ee]'
               }`}
             >
-              {cat === 'All' ? 'همه محصولات' : cat}
+              {cat === 'All' ? 'همه محصولات' : cat === 'Course' ? '📚 دوره‌ها' : cat === 'Book' ? '📄 کتاب‌ها' : '🔑 لایسنس‌ها'}
             </button>
           ))}
         </div>
 
-        {/* Display loading state, the filtered products grid, or a fallback message */}
         {isLoading ? (
           <div className="text-center py-20 text-gray-500 font-bold text-sm">در حال بارگذاری محصولات...</div>
         ) : filteredProducts.length > 0 ? (

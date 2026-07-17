@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import AdminProductManagement from '../components/admin/AdminProductManagement';
 import AdminUserManagement from '../components/admin/AdminUserManagement';
@@ -15,16 +14,12 @@ export default function AdminDashboard() {
   const [inspectType, setInspectType] = useState(null);
   const [inspectEntity, setInspectEntity] = useState(null);
 
-  const navigate = useNavigate();
-
-  // Load administrative workspace context smoothly from DB
   const loadAdminData = async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     else setIsSilentUpdating(true);
 
     const token = localStorage.getItem('token');
     
-    // Dynamically query target endpoints based on the active UI tab selection state
     const endpointPath = activeTab === 'pending' ? 'products' : 'users';
 
     try {
@@ -35,9 +30,7 @@ export default function AdminDashboard() {
         const data = await response.json();
         if (activeTab === 'pending') setPendingProducts(data);
         else if (activeTab === 'users') setUsers(data);
-      } else {
-        navigate('/');
-      }
+      } 
     } catch (error) {
       console.error(error);
     } finally {
@@ -48,7 +41,6 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadAdminData(false); }, [activeTab]);
 
-  // Execute product verification with safe error handling
   const handleVerify = async (productId, status) => {
     try {
       const token = localStorage.getItem('token');
@@ -63,7 +55,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Execute user ban toggle with safe error handling
   const handleToggleBan = async (userId, isBanned) => {
     try {
       const token = localStorage.getItem('token');
@@ -78,7 +69,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Execute role mutation with safe error handling
   const handleRoleChange = async (userId, role) => {
     try {
       const token = localStorage.getItem('token');

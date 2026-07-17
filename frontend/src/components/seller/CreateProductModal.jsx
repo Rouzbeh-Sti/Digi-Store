@@ -7,11 +7,11 @@ export default function CreateProductModal({ isOpen, onClose, onSave }) {
   const [category, setCategory] = useState('Course'); 
   const [fileUrl, setFileUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [allowSubscription, setAllowSubscription] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  // Handle form submission and prevent state updates on unmounted component
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -21,10 +21,9 @@ export default function CreateProductModal({ isOpen, onClose, onSave }) {
       price: parseFloat(price),
       category,
       fileUrl: category === 'License' ? '' : fileUrl,
-      description
+      description,
+      allowSubscription: category === 'Course' ? allowSubscription : false
     });
-    
-    // State resets are removed because the component is destroyed by the parent upon success
   };
 
   return createPortal(
@@ -50,7 +49,11 @@ export default function CreateProductModal({ isOpen, onClose, onSave }) {
 
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">نوع محصول دیجیتال</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer">
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)} 
+              className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer"
+            >
               <option value="Course">📚 دوره آموزشی (پخش آنلاین ویدیو)</option>
               <option value="Book">📄 کتاب دیجیتال / فایل چاپی (PDF / ZIP)</option>
               <option value="License">🔑 لایسنس اختصاصی نرم‌افزار / کد فعال‌سازی</option>
@@ -68,6 +71,22 @@ export default function CreateProductModal({ isOpen, onClose, onSave }) {
                 {category === 'Course' ? '🔗 لینک استریم ویدیوها' : '🔗 آدرس امن دانلود فایل'}
               </label>
               <input type="url" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://storage.digistore.com/..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+            </div>
+          )}
+
+          {/* Conditional Subscription Toggle (Only for Courses) */}
+          {category === 'Course' && (
+            <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100 flex items-center justify-between">
+              <div className="text-right">
+                <span className="block text-xs font-black text-gray-900">امکان دسترسی با خرید اشتراک</span>
+                <span className="text-[10px] text-gray-400 font-bold mt-1 block">دانشجویان دارای اشتراک فعال دیجی‌کورس به این دوره دسترسی داشته باشند؟</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={allowSubscription} 
+                onChange={(e) => setAllowSubscription(e.target.checked)}
+                className="w-5 h-5 accent-[#6320ee] cursor-pointer"
+              />
             </div>
           )}
 
