@@ -52,6 +52,7 @@ backend/
     orderController.js
     productController.js
     sellerController.js
+    subscriptionController.js
     userController.js
   middleware/
     authMiddleware.js
@@ -70,6 +71,10 @@ backend/
       20260713173239_add_user_banned_status/
         migration.sql
       20260715165802_add_authority_transaction/
+        migration.sql
+      20260716112607_add_cached_ratings_and_unique_review/
+        migration.sql
+      20260716114530_add_allow_subscription_to_product/
         migration.sql
       migration_lock.toml
     schema.prisma
@@ -114,6 +119,7 @@ frontend/
       MobileDrawer.jsx
       Navbar.jsx
       ProductCard.jsx
+      ProtectedRoute.jsx
       SellerCTA.jsx
       SharedCustomTable.jsx
       UserMenu.jsx
@@ -146,144 +152,24 @@ Phase3-C4s/
   Level1.png
   Level2-code.puml
   Level2.png
+  Level3-Backend-code.puml
+  Level3-Backend.png
+  Level3-Database-code.puml
+  Level3-Database.png
+  Level3-Frontend-code.puml
+  Level3-Frontend.png
+  Level3-seller-code.puml
+  Level3-Seller.png
+  Level3-Source file-code.puml
+  Level3-Source file.png
+.gitignore
+Project Report.pdf
 README.md
 System texture diagram.pdf
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
-
-<file path="frontend/src/components/Footer.jsx">
-import React from 'react';
-import { Link } from 'react-router-dom';
-
-export default function Footer() {
-  return (
-    <footer className="w-full bg-[#0b0a1a] text-gray-400 border-t border-purple-950/40 pt-16 pb-8 relative overflow-hidden z-10">
-      {/* Background Decorative Glow */}
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 mb-12 text-right">
-        
-        {/* Column 1: Brand and Bio */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 justify-start">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#6320ee] to-[#863bff] rounded-xl flex items-center justify-center shadow-lg shadow-purple-900/30">
-              <span className="text-white font-black text-lg leading-none">D</span>
-            </div>
-            <span className="text-xl font-black tracking-tight text-white">
-              DigiStore
-            </span>
-          </div>
-          <p className="text-xs font-medium text-gray-500 leading-relaxed">
-            بزرگ‌ترین بازارچه تخصصی چندفروشندگی جهت عرضه، خرید و تحویل آنی لایسنس‌های نرم‌افزاری، اشتراک پلتفرم‌های بین‌المللی و دوره‌های آموزشی ویدئویی تحت نظارت دپارتمان مهندسی نرم‌افزار.
-          </p>
-          <div className="flex gap-3 pt-2">
-            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">✈️</span>
-            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">📸</span>
-            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">💻</span>
-          </div>
-        </div>
-
-        {/* Column 2: Quick Links */}
-        <div>
-          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
-            ناوبری بازارچه
-          </h4>
-          <ul className="space-y-2.5 text-xs font-bold">
-            <li>
-              <Link to="/marketplace" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>🏪</span> بازارچه محصولات دیجیتال
-              </Link>
-            </li>
-            <li>
-              <Link to="/cart" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>🛒</span> سبد خرید و فاکتور
-              </Link>
-            </li>
-            <li>
-              <Link to="/buyer/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>📚</span> کتابخانه و لایسنس‌های من
-              </Link>
-            </li>
-            <li>
-              <Link to="/settings" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>⚙️</span> تنظیمات حساب کاربری
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 3: Dashboards & Roles */}
-        <div>
-          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
-            سطوح دسترسی سیستم
-          </h4>
-          <ul className="space-y-2.5 text-xs font-bold">
-            <li>
-              <Link to="/seller/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>📈</span> پنل مدیریت فروشندگان
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>🛠️</span> لایه کنترلی و ادمین ارشد
-              </Link>
-            </li>
-            <li>
-              <Link to="/register?role=SELLER" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
-                <span>👨‍🏫</span> ثبت‌نام مدرسان / تأمین‌کنندگان
-              </Link>
-            </li>
-            <li>
-              <span className="text-gray-600 flex items-center gap-1.5 cursor-not-allowed">
-                <span>🛡️</span> مستندات API پلتفرم (بزودی)
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 4: Development Team (SBU) */}
-        <div>
-          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
-            تیم مهندسی نرم‌افزار SBU
-          </h4>
-          <ul className="space-y-2 text-[11px] font-semibold text-gray-500">
-            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
-              <span className="font-black text-gray-300">روزبه سلطانی</span>
-              <span className="font-mono text-[10px] text-purple-400">402243072</span>
-            </li>
-            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
-              <span className="font-black text-gray-300">عرفان پنجه‌شاهی</span>
-              <span className="font-mono text-[10px] text-purple-400">402243046</span>
-            </li>
-            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
-              <span className="font-black text-gray-300">ماهان بانشی</span>
-              <span className="font-mono text-[10px] text-purple-400">402243042</span>
-            </li>
-            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
-              <span className="font-black text-gray-300">سید مهدی میرمطهری</span>
-              <span className="font-mono text-[10px] text-purple-400">402243106</span>
-            </li>
-          </ul>
-        </div>
-
-      </div>
-
-      {/* Bottom Copyright Strip */}
-      <div className="max-w-6xl mx-auto px-6 pt-8 border-t border-purple-950/40 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-right">
-        <p className="text-[10px] font-bold text-gray-600">
-          این پروژه به عنوان مستند نهایی فاز سوم درس مهندسی نرم‌افزار دانشگاه شهید بهشتی (SBU) توسعه یافته است.
-        </p>
-        <p className="text-[10px] font-black text-gray-500 tracking-wide font-mono">
-          &copy; 2026 DigiStore Platform. All rights reserved.
-        </p>
-      </div>
-    </footer>
-  );
-}
-</file>
 
 <file path=".github/workflows/ci.yml">
 name: Backend CI Pipeline
@@ -392,6 +278,157 @@ const downloadSecureProduct = async (req, res) => {
 };
 
 module.exports = { getBuyerDashboard, downloadSecureProduct };
+</file>
+
+<file path="backend/controllers/subscriptionController.js">
+const { PrismaClient } = require('@prisma/client');
+const axios = require('axios');
+const prisma = new PrismaClient();
+
+const ZARINPAL_MERCHANT_ID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+const ZARINPAL_REQUEST_URL = "https://sandbox.zarinpal.com/pg/v4/payment/request.json";
+const ZARINPAL_VERIFY_URL = "https://sandbox.zarinpal.com/pg/v4/payment/verify.json";
+const ZARINPAL_STARTPAY_URL = "https://sandbox.zarinpal.com/pg/StartPay/";
+
+// Fetch all active subscription plans
+const getPlans = async (req, res) => {
+    try {
+        const plans = await prisma.subscriptionPlan.findMany({
+            where: { isActive: true }
+        });
+        res.status(200).json(plans);
+    } catch (error) {
+        console.error("Get Plans Error:", error);
+        res.status(500).json({ message: "Failed to load subscription plans." });
+    }
+};
+
+// Initiate subscription purchase process via Zarinpal Sandbox
+const buySubscription = async (req, res) => {
+    try {
+        const { planId } = req.body;
+        const userId = req.user.userId;
+
+        const plan = await prisma.subscriptionPlan.findUnique({
+            where: { id: parseInt(planId) }
+        });
+
+        if (!plan || !plan.isActive) {
+            return res.status(404).json({ message: "Selected subscription plan not found or inactive." });
+        }
+
+        // Create a temporary reference for tracking this gateway attempt
+        const authority = "SUB-" + Math.random().toString(36).substring(2, 15).toUpperCase();
+
+        // Integrate with Zarinpal Sandbox API
+        const zarinpalRes = await axios.post(ZARINPAL_REQUEST_URL, {
+            merchant_id: ZARINPAL_MERCHANT_ID,
+            amount: plan.price * 10, // Convert Toman to Rial
+            description: `خرید اشتراک ${plan.title} در دیجی‌استور`,
+            callback_url: `http://localhost:5000/api/subscriptions/verify?authority=${authority}&userId=${userId}&planId=${plan.id}`
+        });
+
+        if (zarinpalRes.data.data.code === 100) {
+            const zarinpalAuth = zarinpalRes.data.data.authority;
+
+            // In production, you would persist this temporary transaction metadata to your DB
+            return res.status(200).json({ 
+                paymentUrl: `${ZARINPAL_STARTPAY_URL}${zarinpalAuth}` 
+            });
+        } else {
+            return res.status(500).json({ message: "Failed to connect to payment gateway." });
+        }
+
+    } catch (error) {
+        console.error("Buy Subscription Error:", error);
+        res.status(500).json({ message: "Server error processing subscription payment." });
+    }
+};
+
+// Callback from payment gateway to issue and activate subscription
+const verifySubscription = async (req, res) => {
+    try {
+        const { authority, userId, planId, Authority, Status } = req.query;
+
+        if (Status !== 'OK') {
+            return res.redirect('http://localhost:5173/payment-result?status=failed');
+        }
+
+        const parsedUserId = parseInt(userId);
+        const parsedPlanId = parseInt(planId);
+
+        const plan = await prisma.subscriptionPlan.findUnique({
+            where: { id: parsedPlanId }
+        });
+
+        if (!plan) {
+            return res.redirect('http://localhost:5173/payment-result?status=error');
+        }
+
+        // Zarinpal Sandbox Verification request
+        const verifyRes = await axios.post(ZARINPAL_VERIFY_URL, {
+            merchant_id: ZARINPAL_MERCHANT_ID,
+            amount: plan.price * 10,
+            authority: Authority
+        });
+
+        if (verifyRes.data.data.code === 100 || verifyRes.data.data.code === 101) {
+            const now = new Date();
+            let durationDays = 30;
+
+            if (plan.duration === 'THREE_MONTHS') durationDays = 90;
+            else if (plan.duration === 'YEARLY') durationDays = 365;
+
+            const endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+            // Save active subscription schema for the buyer user
+            await prisma.userSubscription.create({
+                data: {
+                    userId: parsedUserId,
+                    subscriptionPlanId: parsedPlanId,
+                    startDate: now,
+                    endDate: endDate,
+                    isActive: true
+                }
+            });
+
+            return res.redirect('http://localhost:5173/payment-result?status=success');
+        } else {
+            return res.redirect('http://localhost:5173/payment-result?status=failed');
+        }
+
+    } catch (error) {
+        console.error("Verify Subscription Error:", error);
+        return res.redirect('http://localhost:5173/payment-result?status=error');
+    }
+};
+
+// Check if current user has an active platform subscription
+const checkStatus = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const activeSub = await prisma.userSubscription.findFirst({
+            where: {
+                userId: userId,
+                isActive: true,
+                endDate: { gte: new Date() }
+            },
+            include: { plan: true },
+            orderBy: { endDate: 'desc' }
+        });
+
+        res.status(200).json({
+            hasActiveSubscription: !!activeSub,
+            subscription: activeSub
+        });
+    } catch (error) {
+        console.error("Check Subscription Status Error:", error);
+        res.status(500).json({ message: "Failed to check subscription status." });
+    }
+};
+
+module.exports = { getPlans, buySubscription, verifySubscription, checkStatus };
 </file>
 
 <file path="backend/controllers/userController.js">
@@ -671,6 +708,26 @@ ALTER TABLE "Transaction" ADD COLUMN     "authority" TEXT;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Transaction_authority_key" ON "Transaction"("authority");
+</file>
+
+<file path="backend/prisma/migrations/20260716112607_add_cached_ratings_and_unique_review/migration.sql">
+/*
+  Warnings:
+
+  - A unique constraint covering the columns `[userId,productId]` on the table `Review` will be added. If there are existing duplicate values, this will fail.
+
+*/
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "averageRating" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+ADD COLUMN     "reviewCount" INTEGER NOT NULL DEFAULT 0;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Review_userId_productId_key" ON "Review"("userId", "productId");
+</file>
+
+<file path="backend/prisma/migrations/20260716114530_add_allow_subscription_to_product/migration.sql">
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "allowSubscription" BOOLEAN NOT NULL DEFAULT true;
 </file>
 
 <file path="backend/prisma/migrations/migration_lock.toml">
@@ -1092,6 +1149,137 @@ export default function SellerCustomers({ customers }) {
 }
 </file>
 
+<file path="frontend/src/components/Footer.jsx">
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+export default function Footer() {
+  return (
+    <footer className="w-full bg-[#0b0a1a] text-gray-400 border-t border-purple-950/40 pt-16 pb-8 relative overflow-hidden z-10">
+      {/* Background Decorative Glow */}
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 mb-12 text-right">
+        
+        {/* Column 1: Brand and Bio */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 justify-start">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#6320ee] to-[#863bff] rounded-xl flex items-center justify-center shadow-lg shadow-purple-900/30">
+              <span className="text-white font-black text-lg leading-none">D</span>
+            </div>
+            <span className="text-xl font-black tracking-tight text-white">
+              DigiStore
+            </span>
+          </div>
+          <p className="text-xs font-medium text-gray-500 leading-relaxed">
+            بزرگ‌ترین بازارچه تخصصی چندفروشندگی جهت عرضه، خرید و تحویل آنی لایسنس‌های نرم‌افزاری، اشتراک پلتفرم‌های بین‌المللی و دوره‌های آموزشی ویدئویی تحت نظارت دپارتمان مهندسی نرم‌افزار.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">✈️</span>
+            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">📸</span>
+            <span className="w-8 h-8 rounded-xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-center text-sm cursor-pointer hover:bg-[#6320ee] hover:text-white transition-all">💻</span>
+          </div>
+        </div>
+
+        {/* Column 2: Consolidated Quick Links & Dashboards */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
+            ناوبری و پنل‌ها
+          </h4>
+          <ul className="space-y-2.5 text-xs font-bold">
+            <li>
+              <Link to="/marketplace" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>🏪</span> بازارچه محصولات دیجیتال
+              </Link>
+            </li>
+            <li>
+              <Link to="/cart" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>🛒</span> سبد خرید و فاکتور
+              </Link>
+            </li>
+            <li>
+              <Link to="/buyer/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>📚</span> کتابخانه و لایسنس‌های من
+              </Link>
+            </li>
+            <li>
+              <Link to="/seller/dashboard" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>📈</span> پنل مدیریت فروشندگان
+              </Link>
+            </li>
+            <li>
+              <Link to="/register?role=SELLER" className="hover:text-[#863bff] transition-colors flex items-center gap-1.5">
+                <span>👨‍🏫</span> ثبت‌نام مدرسان / تأمین‌کنندگان
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Column 3: Location and Neshan Maps Embed */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
+            آدرس دانشکده
+          </h4>
+          <p className="text-[11px] font-bold text-gray-400 leading-relaxed mb-3">
+            تهران، اوین، میدان شهریاری، دانشگاه شهید بهشتی، دانشکده مهندسی و علوم کامپیوتر
+          </p>
+          {/* SBU Faculty of Computer Engineering Neshan Maps Iframe */}
+          <div className="w-full h-28 rounded-xl overflow-hidden border border-purple-900/40 shadow-inner">
+            <iframe 
+              src="https://neshan.org/maps/places/3a16780a91ab697a68fbf2fe9026f8b3#c35.802-51.394-19z-0p" 
+              width="100%" 
+              height="100%" 
+              style={{ border: 0 }} 
+              allowFullScreen="" 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+              title="SBU Computer Engineering Faculty Neshan Map"
+            ></iframe>
+          </div>
+        </div>
+
+        {/* Column 4: Development Team (SBU) */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-r-2 border-[#6320ee] pr-2.5">
+            تیم مهندسی نرم‌افزار SBU
+          </h4>
+          <ul className="space-y-2 text-[11px] font-semibold text-gray-500">
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">روزبه سلطانی</span>
+              <span className="font-mono text-[10px] text-purple-400">402243072</span>
+            </li>
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">عرفان پنجه‌شاهی</span>
+              <span className="font-mono text-[10px] text-purple-400">402243046</span>
+            </li>
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">ماهان بانشی</span>
+              <span className="font-mono text-[10px] text-purple-400">402243042</span>
+            </li>
+            <li className="flex justify-between items-center bg-purple-950/10 p-2 rounded-xl border border-purple-950/30">
+              <span className="font-black text-gray-300">سید محمدمهدی میرمطهری</span>
+              <span className="font-mono text-[10px] text-purple-400">402243106</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      {/* Bottom Copyright Strip */}
+      <div className="max-w-6xl mx-auto px-6 pt-8 border-t border-purple-950/40 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-right">
+        <p className="text-[10px] font-bold text-gray-600">
+          این پروژه به عنوان مستند نهایی فاز سوم درس مهندسی نرم‌افزار توسعه یافته است.
+        </p>
+        <p className="text-[10px] font-black text-gray-500 tracking-wide font-mono">
+          © 2026 DigiStore Platform. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  );
+}
+</file>
+
 <file path="frontend/src/components/Hero.jsx">
 import React from 'react';
 
@@ -1204,6 +1392,32 @@ export default function MobileDrawer({ isOpen, onClose, user, isActive }) {
     </>,
     document.body
   );
+}
+</file>
+
+<file path="frontend/src/components/ProtectedRoute.jsx">
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+
+export default function ProtectedRoute({ children, allowedRoles }) {
+  // Retrieve authentication context from local storage
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  
+  // Redirect unauthenticated users immediately to login page
+  if (!token || !userStr) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const user = JSON.parse(userStr);
+
+  // Block access if user role is not authorized for this specific route
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />; // Or route to a dedicated 403 Forbidden page
+  }
+
+  // Render the requested component if all security checks pass
+  return children;
 }
 </file>
 
@@ -1357,248 +1571,6 @@ export function CartProvider({ children }) {
     <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getCartTotal }}>
       {children}
     </CartContext.Provider>
-  );
-}
-</file>
-
-<file path="frontend/src/pages/BuyerDashboard.jsx">
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-
-export default function BuyerDashboard() {
-  const [orders, setOrders] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/my-orders`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Filter only completed orders to show active products
-          setOrders(data.filter(o => o.status === 'COMPLETED'));
-        }
-      } catch (error) {
-        console.error('Network error fetching library:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [navigate]);
-
-  return (
-    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
-      <Navbar />
-
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">📚 کتابخانه محصولات من</h1>
-          <p className="text-sm text-gray-500 mt-2 font-medium">دسترسی دائمی به فایل‌ها، دوره‌ها و کدهای فعال‌سازی خریداری شده</p>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs">
-            <div className="text-6xl mb-4 opacity-50">📂</div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">کتابخانه شما خالی است</h2>
-            <p className="text-xs font-bold text-gray-400 mb-6">به بازارچه سر بزنید و اولین محصول خود را تهیه کنید.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs flex flex-col gap-4">
-                <div className="flex justify-between items-center border-b border-gray-50 pb-4">
-                  <div className="flex gap-4 items-center">
-                    <span className="text-xs font-black text-gray-500">شناسه خرید: #{order.id}</span>
-                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
-                      {new Date(order.createdAt).toLocaleDateString('fa-IR')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex flex-col p-5 bg-gradient-to-br from-purple-50/50 to-white rounded-2xl border border-purple-100/50 gap-4 shadow-sm hover:shadow-md transition-shadow">
-                      
-                      {/* Product Info */}
-                      <div>
-                        <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-[9px] font-black rounded mb-2">
-                          {item.product.category === 'Course' ? 'دوره' : item.product.category === 'License' ? 'لایسنس' : 'فایل'}
-                        </span>
-                        <h3 className="text-sm font-black text-gray-900 line-clamp-1">{item.product.title}</h3>
-                      </div>
-                      
-                      {/* License Key Box */}
-                      {item.license && (
-                        <div className="bg-white p-3 rounded-xl border border-gray-200 border-dashed flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-gray-400">کد اختصاصی:</span>
-                          <span className="text-xs font-black text-gray-900 font-mono tracking-wider">
-                            {item.license.licenseKey}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Action Button */}
-                      {item.product.category !== 'License' && item.product.fileUrl ? (
-                        <a 
-                          href={item.product.fileUrl} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="mt-auto w-full py-2.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-center text-xs font-black rounded-xl transition-colors"
-                        >
-                          🔗 دریافت فایل / مشاهده
-                        </a>
-                      ) : (
-                        <div className="mt-auto w-full py-2.5 bg-green-50 text-green-700 text-center text-xs font-black rounded-xl border border-green-100">
-                          ✅ لایسنس آماده استفاده
-                        </div>
-                      )}
-                      
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="frontend/src/pages/Marketplace.jsx">
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import ProductCard from '../components/ProductCard';
-
-export default function Marketplace() {
-  const [products, setProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Read initial category filter from URL query string if present, default to 'All'
-  const initialCategory = searchParams.get('category') || 'All';
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  
-  const [isLoading, setIsLoading] = useState(true);
-
-  const categories = ['All', 'Course', 'Book', 'License'];
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  // Sync state if URL query params change dynamically
-  useEffect(() => {
-    const catParam = searchParams.get('category');
-    if (catParam) {
-      setSelectedCategory(catParam);
-    } else {
-      setSelectedCategory('All');
-    }
-  }, [searchParams]);
-
-  const handleCategoryChange = (cat) => {
-    setSelectedCategory(cat);
-    if (cat === 'All') {
-      searchParams.delete('category');
-    } else {
-      searchParams.set('category', cat);
-    }
-    setSearchParams(searchParams);
-  };
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  return (
-    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
-      <Navbar />
-      
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">بازارچه محصولات</h1>
-            <p className="text-sm text-gray-500 mt-2 font-medium">جدیدترین دوره‌ها، نرم‌افزارها و کتاب‌های دیجیتال</p>
-          </div>
-          
-          <div className="w-full md:w-96 relative shadow-sm rounded-xl">
-            <input 
-              type="text" 
-              placeholder="جستجوی محصول..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3.5 pr-12 rounded-xl bg-white border border-gray-200 text-gray-900 focus:outline-none focus:border-[#6320ee] transition-all text-xs font-bold"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-          </div>
-        </div>
-
-        {/* Category Filter Buttons */}
-        <div className="flex gap-3 mb-10 overflow-x-auto pb-2">
-          {categories.map((cat, index) => (
-            <button
-              key={index}
-              onClick={() => handleCategoryChange(cat)}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                selectedCategory === cat 
-                  ? 'bg-[#6320ee] text-white shadow-md' 
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-[#6320ee] hover:text-[#6320ee]'
-              }`}
-            >
-              {cat === 'All' ? 'همه محصولات' : cat === 'Course' ? '📚 دوره‌ها' : cat === 'Book' ? '📄 کتاب‌ها' : '🔑 لایسنس‌ها'}
-            </button>
-          ))}
-        </div>
-
-        {isLoading ? (
-          <div className="text-center py-20 text-gray-500 font-bold text-sm">در حال بارگذاری محصولات...</div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} item={product} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 text-gray-500 font-bold text-sm">محصولی با این مشخصات یافت نشد!</div>
-        )}
-      </div>
-    </div>
   );
 }
 </file>
@@ -2267,6 +2239,662 @@ end note
 @enduml
 </file>
 
+<file path="Phase3-C4s/Level3-Backend-code.puml">
+@startuml
+title Level 3 - Backend Component Diagram
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam ArrowColor #4B4B4B
+skinparam ComponentBorderColor #6A6A6A
+skinparam ComponentBackgroundColor #F8F8F8
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+
+package "Backend API" as Backend {
+
+  component "Express App\nserver.js" as App
+
+  package "Authentication" as AuthPkg {
+    component "Auth Routes\nauthRoutes.js" as AuthRoutes
+    component "Auth Controller\nauthController.js" as AuthController
+    component "JWT Verification\nverifyToken" as JWTVerify
+    component "RBAC\nisSeller / isAdmin" as RBAC
+  }
+
+  package "Products" as ProductPkg {
+    component "Product Routes\nproductRoutes.js" as ProductRoutes
+    component "Product Controller\nproductController.js" as ProductController
+  }
+
+  package "Seller" as SellerPkg {
+    component "Seller Routes\nsellerRoutes.js" as SellerRoutes
+    component "Seller Controller\nsellerController.js" as SellerController
+  }
+
+  package "Buyer" as BuyerPkg {
+    component "Buyer Routes\nbuyerRoutes.js" as BuyerRoutes
+    component "Buyer Controller\nbuyerController.js" as BuyerController
+  }
+
+  package "Admin" as AdminPkg {
+    component "Admin Routes\nadminRoutes.js" as AdminRoutes
+    component "Admin Controller\nadminController.js" as AdminController
+  }
+
+  package "Orders" as OrderPkg {
+    component "Order Routes\norderRoutes.js" as OrderRoutes
+    component "Order Controller\norderController.js" as OrderController
+  }
+
+  component "Prisma Client\nData Access Layer" as Prisma
+}
+
+database "PostgreSQL" as DB
+
+App --> AuthRoutes : mounts /api/auth
+App --> ProductRoutes : mounts /api/products
+App --> SellerRoutes : mounts /api/seller
+App --> BuyerRoutes : mounts /api/buyer
+App --> AdminRoutes : mounts /api/admin
+
+AuthRoutes --> AuthController
+ProductRoutes --> ProductController
+SellerRoutes --> SellerController
+BuyerRoutes --> BuyerController
+AdminRoutes --> AdminController
+OrderRoutes --> OrderController
+
+AuthRoutes --> JWTVerify
+SellerRoutes --> JWTVerify
+BuyerRoutes --> JWTVerify
+AdminRoutes --> JWTVerify
+OrderRoutes --> JWTVerify
+
+SellerRoutes --> RBAC
+AdminRoutes --> RBAC
+
+AuthController --> Prisma
+ProductController --> Prisma
+SellerController --> Prisma
+BuyerController --> Prisma
+AdminController --> Prisma
+OrderController --> Prisma
+
+Prisma --> DB
+
+OrderRoutes ..> App : defined but not mounted
+
+note right of OrderRoutes
+orderRoutes.js exists in the codebase,
+but it is not mounted in server.js.
+end note
+
+note bottom of Prisma
+Prisma is the ORM / data access layer.
+PostgreSQL is the actual database.
+end note
+
+@enduml
+</file>
+
+<file path="Phase3-C4s/Level3-Database-code.puml">
+@startuml
+title C4 Level 3 - Database Domain Model (Final Version)
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #2C3E50
+skinparam PackageBorderColor #34495E
+skinparam PackageBackgroundColor #F8F9F9
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #2C3E50
+skinparam ClassHeaderBackgroundColor #E5E8E8
+
+hide methods
+hide empty members
+
+package "Digital Store Domain Model" {
+
+  enum Role {
+BUYER
+SELLER
+ADMIN
+  }
+
+  enum OrderStatus {
+PENDING
+COMPLETED
+FAILED
+  }
+
+  enum ProductStatus {
+PENDING
+APPROVED
+REJECTED
+  }
+
+  enum PlanDuration {
+MONTHLY
+THREE_MONTHS
+YEARLY
+  }
+
+  class User {
+id : UUID
+email : String
+fullName : String
+role : Role
+isBanned : Boolean
+storeName : String?
+phone : String?
+bio : String?
+  }
+
+  class Product {
+id : UUID
+title : String
+price : Float
+status : ProductStatus
+sellerId : UUID
+category : String
+fileUrl : String
+  }
+
+  class License {
+id : UUID
+licenseKey : String
+productId : UUID
+orderItemId : UUID
+downloadCount : Int
+expiresAt : DateTime?
+isValid : Boolean
+  }
+
+  class Order {
+id : UUID
+buyerId : UUID
+totalAmount : Float
+status : OrderStatus
+  }
+
+  class OrderItem {
+id : UUID
+orderId : UUID
+productId : UUID
+price : Float
+  }
+
+  class Transaction {
+id : UUID
+orderId : UUID
+amount : Float
+paymentMethod : String
+status : String
+  }
+
+  class SubscriptionPlan {
+id : UUID
+title : String
+price : Float
+duration : PlanDuration
+isActive : Boolean
+  }
+
+  class UserSubscription {
+id : UUID
+userId : UUID
+subscriptionPlanId : UUID
+startDate : DateTime
+endDate : DateTime
+isActive : Boolean
+  }
+
+  class Review {
+id : UUID
+rating : Int
+comment : String?
+userId : UUID
+productId : UUID
+  }
+}
+
+User "1" -- "0..*" Product : sells
+User "1" -- "0..*" Order : buys
+Order "1" -- "1..*" OrderItem : contains
+Product "1" -- "0..*" OrderItem : referenced in
+Order "1" -- "0..1" Transaction : payment
+OrderItem "1" -- "0..1" License : generates
+Product "1" -- "0..*" License : provides
+User "1" -- "0..*" UserSubscription
+SubscriptionPlan "1" -- "0..*" UserSubscription
+User "1" -- "0..*" Review : writes
+Product "1" -- "0..*" Review : receives
+
+note right of Transaction
+Unique orderId ensures
+at most one transaction per order.
+end note
+
+note right of License
+Unique orderItemId ensures
+at most one license per order item.
+end note
+
+@enduml
+</file>
+
+<file path="Phase3-C4s/Level3-Frontend-code.puml">
+@startuml
+title C4 Level 3 - Frontend Component Diagram
+
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam ArrowColor #4B4B4B
+skinparam ComponentBorderColor #6A6A6A
+skinparam ComponentBackgroundColor #F9F9F9
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+
+actor "User\n(Buyer / Seller / Admin)" as User
+
+rectangle "Frontend App" as FE {
+
+  component "main.jsx" as Main
+  component "App.jsx\nReact Router" as App
+
+  package "Shared UI" as Shared {
+    component "Navbar" as Navbar
+    component "AuthLayout" as AuthLayout
+    component "Hero" as Hero
+    component "ProductCard" as ProductCard
+    component "SellerCTA" as SellerCTA
+    component "UserMenu" as UserMenu
+    component "MobileDrawer" as MobileDrawer
+    component "SharedCustomTable" as SharedTable
+  }
+
+  package "Authentication UI" as Auth {
+    component "Login" as Login
+    component "Register" as Register
+  }
+
+  package "Marketplace UI" as Market {
+    component "Home" as Home
+    component "Marketplace" as Marketplace
+    component "ProductDetails" as ProductDetails
+  }
+
+  package "Seller Dashboard UI" as SellerUI {
+    component "SellerDashboard" as SellerDashboard
+    component "SellerProducts" as SellerProducts
+    component "SellerCustomers" as SellerCustomers
+    component "CreateProductModal" as CreateProductModal
+    component "EditProductModal" as EditProductModal
+  }
+
+  package "Admin Dashboard UI" as AdminUI {
+    component "AdminDashboard" as AdminDashboard
+    component "AdminProductManagement" as AdminProductManagement
+    component "AdminUserManagement" as AdminUserManagement
+    component "InspectionModal" as InspectionModal
+  }
+
+  component "BrowserRouter / Routes" as Router
+}
+
+cloud "Backend API\nVITE_API_BASE_URL" as API
+
+User --> Main
+Main --> App
+App --> Router
+
+Router --> Home : "/"
+Router --> Login : "/login"
+Router --> Register : "/register"
+Router --> Marketplace : "/marketplace"
+Router --> ProductDetails : "/product/:id"
+Router --> SellerDashboard : "/seller/dashboard"
+Router --> AdminDashboard : "/admin/dashboard"
+
+Home --> Navbar
+Home --> Hero
+Home --> ProductCard
+Home --> SellerCTA
+
+Marketplace --> Navbar
+Marketplace --> ProductCard
+
+ProductDetails --> Navbar
+ProductDetails --> API : fetch product details
+
+Login --> AuthLayout
+Register --> AuthLayout
+
+SellerDashboard --> Navbar
+SellerDashboard --> SellerProducts
+SellerDashboard --> SellerCustomers
+SellerDashboard --> CreateProductModal
+SellerDashboard --> EditProductModal
+SellerDashboard --> API : fetch /api/seller/*
+
+AdminDashboard --> Navbar
+AdminDashboard --> AdminProductManagement
+AdminDashboard --> AdminUserManagement
+AdminDashboard --> InspectionModal
+AdminProductManagement --> SharedTable
+AdminUserManagement --> SharedTable
+AdminDashboard --> API : fetch /api/admin/*
+AdminDashboard --> UserMenu
+
+Navbar --> MobileDrawer
+Navbar --> UserMenu
+AuthLayout --> App
+Hero --> API : search / products
+ProductCard --> API : product data
+SellerCTA --> API : seller action
+
+note right of App
+React Router is defined in App.jsx.
+No separate PrivateRoute component
+is visible in the codebase.
+end note
+
+note bottom of API
+Frontend talks to backend via fetch
+using VITE_API_BASE_URL and
+Authorization: Bearer token
+from localStorage when needed.
+end note
+
+@enduml
+</file>
+
+<file path="Phase3-C4s/Level3-seller-code.puml">
+@startuml
+title C4 Level 3 - Seller Component Diagram
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #4B4B4B
+skinparam RectangleBorderColor #6A6A6A
+skinparam RectangleBackgroundColor #F9F9F9
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+skinparam DatabaseBackgroundColor #F8F8F8
+skinparam DatabaseBorderColor #6A6A6A
+
+left to right direction
+
+actor "User\n(Seller)" as Seller
+
+package "Backend API" {
+
+  component "server.js" as Server
+  component "sellerRoutes.js" as Routes
+  component "authMiddleware.js" as AuthMiddleware
+  component "sellerController.js" as Controller
+
+  package "Seller Controller Functions" {
+    component "sellerCreateProduct()" as CreateProduct
+    component "getSellerAnalytics()" as SellerAnalytics
+    component "updateSellerProduct()" as EditProduct
+  }
+
+  component "Prisma Client" as Prisma
+
+  database "PostgreSQL" as DB
+
+  package "Prisma Models" {
+    component "User" as UserModel
+    component "Product" as ProductModel
+    component "OrderItem" as OrderItemModel
+    component "Order" as OrderModel
+    component "Review" as ReviewModel
+  }
+}
+
+' External request flow
+Seller --> Server : HTTP request
+Server --> Routes : mounts router at /api/seller
+
+' Route middleware flow
+Routes --> AuthMiddleware : router.use(verifyToken, isSeller)
+AuthMiddleware --> Prisma : prisma.user.findUnique()
+Prisma --> DB
+
+' Auth details
+AuthMiddleware --> UserModel : checks user exists,\nisBanned = false,\nrole = SELLER
+
+' Route to controller flow
+Routes --> Controller : calls controller functions
+
+' Controller function mapping
+Controller --> CreateProduct : POST /product
+Controller --> SellerAnalytics : GET /analytics
+Controller --> EditProduct : PUT /product-edit
+
+' Mounted API endpoint notes
+note right of Routes
+Declared in sellerRoutes.js:
+POST /product
+GET  /analytics
+PUT  /product-edit
+
+Mounted API paths:
+POST /api/seller/product
+GET  /api/seller/analytics
+PUT  /api/seller/product-edit
+end note
+
+' Seller role note
+note left of Seller
+Seller is not a separate model.
+
+Seller is represented as:
+User.role = SELLER
+end note
+
+' Create Product data flow
+CreateProduct --> Prisma : prisma.product.create()
+CreateProduct --> ProductModel : creates Product
+
+note bottom of CreateProduct
+Creates a new Product with:
+- title
+- description
+- price
+- category
+- fileUrl
+- sellerId = req.user.id
+- status = PENDING
+end note
+
+' Edit Product data flow
+EditProduct --> Prisma : prisma.product.findUnique()
+EditProduct --> ProductModel : finds Product by id
+EditProduct --> Prisma : prisma.product.update()
+
+note bottom of EditProduct
+Update flow:
+1. Find Product by id
+2. Validate product exists
+3. Check ownership:
+   product.sellerId == req.user.id
+4. Update fields
+5. Reset status to PENDING
+end note
+
+' Analytics data flow
+SellerAnalytics --> Prisma : prisma.product.findMany()
+SellerAnalytics --> ProductModel : filters by sellerId
+ProductModel --> OrderItemModel : includes orderItems
+OrderItemModel --> OrderModel : includes order
+OrderModel --> UserModel : includes buyer
+ProductModel --> ReviewModel : includes reviews
+ReviewModel --> UserModel : includes reviewer
+
+note bottom of SellerAnalytics
+Analytics reads seller-owned products:
+
+Product
+  -> OrderItem
+      -> Order
+          -> Buyer/User
+
+Product
+  -> Review
+      -> Reviewer/User
+
+Only COMPLETED orders are counted
+for sales and earnings.
+end note
+
+' Model relationships
+UserModel --> ProductModel : User.products\nsellerId
+UserModel --> OrderModel : User.orders\nbuyerId
+UserModel --> ReviewModel : User.reviews\nuserId
+
+ProductModel --> OrderItemModel : Product.orderItems
+ProductModel --> ReviewModel : Product.reviews
+
+OrderModel --> OrderItemModel : Order.items
+
+' Database access
+ProductModel --> DB
+UserModel --> DB
+OrderItemModel --> DB
+OrderModel --> DB
+ReviewModel --> DB
+
+@enduml
+</file>
+
+<file path="Phase3-C4s/Level3-Source file-code.puml">
+@startuml
+title C4 Level 3 - Seller Source File Diagram
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #4B4B4B
+skinparam RectangleBorderColor #6A6A6A
+skinparam RectangleBackgroundColor #F9F9F9
+skinparam PackageBorderColor #4B6F91
+skinparam PackageBackgroundColor #F3F8FC
+skinparam DatabaseBackgroundColor #F8F8F8
+skinparam DatabaseBorderColor #6A6A6A
+
+left to right direction
+
+package "Frontend" {
+  component "App.jsx" as App
+  component "SellerDashboard.jsx" as Dashboard
+  component "Navbar.jsx" as Navbar
+  component "CreateProductModal.jsx" as CreateModal
+  component "EditProductModal.jsx" as EditModal
+  component "SellerProducts.jsx" as ProductsUI
+  component "SellerCustomers.jsx" as CustomersUI
+  component "SharedCustomTable.jsx" as TableUI
+}
+
+package "Backend" {
+  component "server.js" as Server
+  component "sellerRoutes.js" as Routes
+  component "authMiddleware.js" as AuthMiddleware
+  component "sellerController.js" as Controller
+
+  package "Controller Functions" {
+    component "sellerCreateProduct()" as CreateFn
+    component "getSellerAnalytics()" as AnalyticsFn
+    component "updateSellerProduct()" as EditFn
+  }
+
+  component "Prisma Client" as Prisma
+
+  package "Prisma Models" {
+    component "User\n(role = SELLER)" as UserModel
+    component "Product" as ProductModel
+    component "OrderItem" as OrderItemModel
+    component "Order" as OrderModel
+    component "Review" as ReviewModel
+  }
+
+  database "PostgreSQL" as DB
+}
+
+' Frontend source-file relationships
+App --> Dashboard : React route\n/seller/dashboard
+
+Dashboard --> Navbar : renders
+Dashboard --> CreateModal : renders / onSave
+Dashboard --> EditModal : renders / onSave
+Dashboard --> ProductsUI : products, onEdit
+Dashboard --> CustomersUI : customers
+
+ProductsUI --> TableUI : renders
+CustomersUI --> TableUI : renders
+
+note right of Dashboard
+SellerDashboard.jsx calls backend by fetch:
+GET  /api/seller/analytics
+POST /api/seller/product
+PUT  /api/seller/product-edit
+end note
+
+CreateModal ..> Dashboard : onSave(formData)
+EditModal ..> Dashboard : onSave(formData)
+
+' Backend source-file relationships
+Server --> Routes : mounts /api/seller
+Routes --> AuthMiddleware : verifyToken, isSeller
+Routes --> Controller : route handlers
+
+Controller ..> CreateFn : contains
+Controller ..> AnalyticsFn : contains
+Controller ..> EditFn : contains
+
+' Auth and persistence flow
+AuthMiddleware --> Prisma : user.findUnique()
+Prisma --> UserModel : check isBanned / role
+
+CreateFn --> Prisma : product.create()
+EditFn --> Prisma : product.findUnique()\nproduct.update()
+AnalyticsFn --> Prisma : product.findMany()
+
+Prisma --> DB
+
+' Data/model relationships used by analytics
+UserModel --> ProductModel : sellerId
+ProductModel --> OrderItemModel : orderItems
+OrderItemModel --> OrderModel : order
+OrderModel --> UserModel : buyer
+ProductModel --> ReviewModel : reviews
+ReviewModel --> UserModel : user
+
+note bottom of Controller
+Exact file-level facts:
+- Seller is not a separate model; it is User with role = SELLER
+- reviews are rendered inline in SellerDashboard.jsx
+- sellerCreateProduct(), getSellerAnalytics(), updateSellerProduct()
+  are functions inside sellerController.js
+end note
+
+@enduml
+</file>
+
+<file path=".gitignore">
+repomix-output.xml
+</file>
+
 <file path="backend/middleware/authMiddleware.js">
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
@@ -2605,162 +3233,6 @@ export default function AdminProductManagement({ products, onVerify, onInspect }
 }
 </file>
 
-<file path="frontend/src/components/seller/CreateProductModal.jsx">
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-
-export default function CreateProductModal({ isOpen, onClose, onSave }) {
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('Course'); 
-  const [fileUrl, setFileUrl] = useState('');
-  const [description, setDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
-
-  // Handle form submission and prevent state updates on unmounted component
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    await onSave({
-      title,
-      price: parseFloat(price),
-      category,
-      fileUrl: category === 'License' ? '' : fileUrl,
-      description
-    });
-    
-    // State resets are removed because the component is destroyed by the parent upon success
-  };
-
-  return createPortal(
-    <>
-      <div 
-        onClick={() => !isSubmitting && onClose()} 
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
-      />
-      <div 
-        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
-        style={{ direction: 'rtl' }}
-      >
-        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
-          <h3 className="text-base font-black text-gray-900">➕ ثبت و انتشار کالا یا دوره جدید</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان یا نام محصول</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: آموزش پیشرفته ری‌اکت یا لایسنس ویندوز ۱۱" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">نوع محصول دیجیتال</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer">
-              <option value="Course">📚 دوره آموزشی (پخش آنلاین ویدیو)</option>
-              <option value="Book">📄 کتاب دیجیتال / فایل چاپی (PDF / ZIP)</option>
-              <option value="License">🔑 لایسنس اختصاصی نرم‌افزار / کد فعال‌سازی</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت پایه (تومان)</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-
-          {category !== 'License' && (
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-2">
-                {category === 'Course' ? '🔗 لینک استریم ویدیوها' : '🔗 آدرس امن دانلود فایل'}
-              </label>
-              <input type="url" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://storage.digistore.com/..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی کالا</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="سرفصل‌ها یا مشخصات فنی فایل را وارد کنید..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
-          </div>
-
-          <div className="pt-4 flex gap-3">
-            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
-              {isSubmitting ? 'در حال ارسال درخواست...' : 'ارسال کالا جهت بررسی و تایید مدیر'}
-            </button>
-            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
-          </div>
-        </form>
-      </div>
-    </>,
-    document.body
-  );
-}
-</file>
-
-<file path="frontend/src/components/seller/EditProductModal.jsx">
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-
-export default function EditProductModal({ isOpen, onClose, product, onSave }) {
-  const [title, setTitle] = useState(product?.title || '');
-  const [price, setPrice] = useState(product?.price || '');
-  const [category, setCategory] = useState(product?.category || 'Course');
-  const [description, setDescription] = useState(product?.description || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
-
-  // Handle form submission and prevent state updates on unmounted component
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    await onSave({ productId: product.id, title, price: parseFloat(price), category, description });
-    // State reset for isSubmitting removed to prevent React unmount warnings
-  };
-
-  return createPortal(
-    <>
-      <div 
-        onClick={() => !isSubmitting && onClose()} 
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
-      />
-      <div 
-        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
-        style={{ direction: 'rtl' }}
-      >
-        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
-          <h3 className="text-base font-black text-gray-900">✏️ ویرایش مشخصات محصول</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان محصول</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت (تومان)</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
-          </div>
-          <div className="pt-4 flex gap-3">
-            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
-              {isSubmitting ? 'در حال ذخیره‌سازی...' : 'اعمال تغییرات و بررسی مجدد'}
-            </button>
-            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
-          </div>
-        </form>
-      </div>
-    </>,
-    document.body
-  );
-}
-</file>
-
 <file path="frontend/src/components/seller/SellerProducts.jsx">
 import React from 'react';
 import SharedCustomTable from '../SharedCustomTable';
@@ -2889,6 +3361,121 @@ export default function ProductCard({ item }) {
 
       </div>
     </Link>
+  );
+}
+</file>
+
+<file path="frontend/src/pages/BuyerDashboard.jsx">
+import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
+
+export default function BuyerDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const token = localStorage.getItem('token');
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/my-orders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setOrders(data.filter(o => o.status === 'COMPLETED'));
+        }
+      } catch (error) {
+        console.error('Network error fetching library:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-12">
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">📚 کتابخانه محصولات من</h1>
+          <p className="text-sm text-gray-500 mt-2 font-medium">دسترسی دائمی به فایل‌ها، دوره‌ها و کدهای فعال‌سازی خریداری شده</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs">
+            <div className="text-6xl mb-4 opacity-50">📂</div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">کتابخانه شما خالی است</h2>
+            <p className="text-xs font-bold text-gray-400 mb-6">به بازارچه سر بزنید و اولین محصول خود را تهیه کنید.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {orders.map((order) => (
+              <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs flex flex-col gap-4">
+                <div className="flex justify-between items-center border-b border-gray-50 pb-4">
+                  <div className="flex gap-4 items-center">
+                    <span className="text-xs font-black text-gray-500">شناسه خرید: #{order.id}</span>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                      {new Date(order.createdAt).toLocaleDateString('fa-IR')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {order.items.map((item) => (
+                    <div key={item.id} className="flex flex-col p-5 bg-gradient-to-br from-purple-50/50 to-white rounded-2xl border border-purple-100/50 gap-4 shadow-sm hover:shadow-md transition-shadow">
+                      
+                      {/* Product Info */}
+                      <div>
+                        <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-[9px] font-black rounded mb-2">
+                          {item.product.category === 'Course' ? 'دوره' : item.product.category === 'License' ? 'لایسنس' : 'فایل'}
+                        </span>
+                        <h3 className="text-sm font-black text-gray-900 line-clamp-1">{item.product.title}</h3>
+                      </div>
+                      
+                      {/* License Key Box */}
+                      {item.license && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-200 border-dashed flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-gray-400">کد اختصاصی:</span>
+                          <span className="text-xs font-black text-gray-900 font-mono tracking-wider">
+                            {item.license.licenseKey}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Action Button */}
+                      {item.product.category !== 'License' && item.product.fileUrl ? (
+                        <a 
+                          href={item.product.fileUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="mt-auto w-full py-2.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-center text-xs font-black rounded-xl transition-colors"
+                        >
+                          🔗 دریافت فایل / مشاهده
+                        </a>
+                      ) : (
+                        <div className="mt-auto w-full py-2.5 bg-green-50 text-green-700 text-center text-xs font-black rounded-xl border border-green-100">
+                          ✅ لایسنس آماده استفاده
+                        </div>
+                      )}
+                      
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 </file>
@@ -3030,199 +3617,120 @@ const handleCheckout = async () => {
 }
 </file>
 
-<file path="frontend/src/pages/Home.jsx">
+<file path="frontend/src/pages/Marketplace.jsx">
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
-import SellerCTA from '../components/SellerCTA';
-import Footer from '../components/Footer'; // Import the new Footer component
 
-export default function Home() {
+export default function Marketplace() {
+  const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [featuredItems, setFeaturedItems] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Read initial category filter from URL query string if present, default to 'All'
+  const initialCategory = searchParams.get('category') || 'All';
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+
+  const categories = ['All', 'Course', 'Book', 'License'];
 
   useEffect(() => {
-    const fetchLatestProducts = async () => {
+    const fetchProducts = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
         if (response.ok) {
           const data = await response.json();
-          setFeaturedItems(data.slice(0, 4));
+          setProducts(data);
         }
       } catch (error) {
-        console.error('Error fetching latest products:', error);
+        console.error('Error fetching products:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchLatestProducts();
+    fetchProducts();
   }, []);
 
-  const handleCategoryClick = (categoryName) => {
-    if (categoryName === 'All') {
-      navigate('/marketplace');
-    } else {
-      navigate(`/marketplace?category=${categoryName}`);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a] relative flex flex-col" style={{ direction: 'rtl' }}>
-      
-      {/* Background Lights */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-300/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-blue-300/15 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-indigo-200/20 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 flex-1">
-        <Navbar />
-
-        <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-
-        {/* Grid Categories Showcase Section */}
-        <section className="max-w-6xl mx-auto px-6 mb-24">
-          <h2 className="text-xl font-black mb-1.5 text-gray-900 tracking-tight">دسته‌بندی محصولات دیجیتال</h2>
-          <p className="text-xs font-bold text-gray-400 mb-8">کالای یادگیری یا ابزار کاربردی خود را انتخاب کنید</p>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {[
-              { icon: "🔑", label: "لایسنس و اشتراک اپ", type: "License", count: "تحویل آنی کلید" },
-              { icon: "🎓", label: "دوره‌های آموزشی ویدیویی", type: "Course", count: "پخش آنلاین ویدیو" },
-              { icon: "📖", label: "کتاب و جزوات الکترونیکی", type: "Book", count: "دانلود فایل PDF" },
-              { icon: "📦", label: "همه محصولات بازارچه", type: "All", count: "مشاهده آرشیو کامل" }
-            ].map((cat, index) => (
-              <div 
-                key={index} 
-                onClick={() => handleCategoryClick(cat.type)}
-                className="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-xs hover:border-[#6320ee] hover:shadow-md transition-all duration-200 cursor-pointer group"
-              >
-                <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-200">{cat.icon}</div>
-                <h3 className="text-xs font-black text-gray-900 mb-1">{cat.label}</h3>
-                <p className="text-[10px] font-bold text-gray-400 tracking-wide">{cat.count}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Top Products Cards Feed Section */}
-        <section className="max-w-6xl mx-auto px-6 mb-24">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h2 className="text-lg font-black text-gray-900 tracking-tight">ویترین محصولات برتر بازارچه</h2>
-              <p className="text-xs font-bold text-gray-400 mt-1">تضمین لایسنس‌های معتبر قانونی و دسترسی همیشگی به فایل‌ها</p>
-            </div>
-            <Link to="/marketplace" className="text-xs font-black text-[#6d28d9] hover:underline bg-purple-50 px-3 py-1.5 rounded-xl">مشاهده همه محصولات ←</Link>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400 font-bold text-xs">در حال بارگذاری محصولات...</div>
-          ) : featuredItems.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredItems.map((item) => (
-                <ProductCard key={item.id} item={item} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-400 font-bold text-xs">هیچ محصولی یافت نشد.</div>
-          )}
-        </section>
-
-        <SellerCTA />
-      </div>
-
-      {/* Render the clean enterprise footer component */}
-      <Footer />
-    </div>
-  );
-}
-</file>
-
-<file path="frontend/src/pages/ProductDetails.jsx">
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { CartContext } from '../context/CartContext';
-
-export default function ProductDetails() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const { addToCart, cart } = useContext(CartContext);
-
+  // Sync state if URL query params change dynamically
   useEffect(() => {
-    const fetchProductDetails = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setProduct(data);
-        } else {
-          navigate('/marketplace');
-        }
-      } catch (error) {
-        console.error("Failed to fetch product details:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProductDetails();
-  }, [id, navigate]);
-
-  const handleBuyClick = () => {
-    const isAlreadyInCart = cart.some(item => item.id === product.id);
-    if (isAlreadyInCart) {
-      alert("این محصول قبلاً به سبد خرید اضافه شده است!");
-      return;
+    const catParam = searchParams.get('category');
+    if (catParam) {
+      setSelectedCategory(catParam);
+    } else {
+      setSelectedCategory('All');
     }
-    
-    addToCart(product);
+  }, [searchParams]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    if (cat === 'All') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', cat);
+    }
+    setSearchParams(searchParams);
   };
 
-  if (isLoading) return <div className="min-h-screen bg-[#f8f8fc] flex items-center justify-center font-black">در حال بارگذاری...</div>;
-  if (!product) return null;
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
-        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xs flex flex-col md:flex-row gap-8">
+      
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">بازارچه محصولات</h1>
+            <p className="text-sm text-gray-500 mt-2 font-medium">جدیدترین دوره‌ها، نرم‌افزارها و کتاب‌های دیجیتال</p>
+          </div>
           
-          <div className="flex-1 space-y-6">
-            <div>
-              <span className="px-3 py-1 bg-purple-50 text-[#6d28d9] text-[10px] font-black rounded-lg mb-4 inline-block">
-                {product.category === 'Course' ? 'دوره آموزشی' : product.category === 'License' ? 'لایسنس' : 'کتاب / فایل'}
-              </span>
-              <h1 className="text-3xl font-black text-gray-900 leading-tight">{product.title}</h1>
-              <p className="text-sm font-bold text-gray-400 mt-2">فروشنده: {product.seller?.storeName || product.seller?.fullName}</p>
-            </div>
-            
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <h3 className="text-sm font-black text-gray-900 mb-2">توضیحات محصول</h3>
-              <p className="text-xs font-semibold text-gray-600 leading-relaxed whitespace-pre-wrap">{product.description}</p>
-            </div>
+          <div className="w-full md:w-96 relative shadow-sm rounded-xl">
+            <input 
+              type="text" 
+              placeholder="جستجوی محصول..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full p-3.5 pr-12 rounded-xl bg-white border border-gray-200 text-gray-900 focus:outline-none focus:border-[#6320ee] transition-all text-xs font-bold"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
           </div>
-
-          <div className="w-full md:w-80 flex flex-col gap-4">
-            <div className="p-6 bg-gradient-to-b from-purple-50 to-white rounded-3xl border border-purple-100/50 shadow-sm text-center">
-              <span className="block text-xs font-bold text-gray-500 mb-1">قیمت نهایی</span>
-              <span className="text-3xl font-black text-[#6d28d9]">{product.price.toLocaleString('en-US')} <span className="text-sm">تومان</span></span>
-              
-              <button onClick={handleBuyClick} className="w-full mt-6 py-3.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer">
-                افزودن به سبد خرید
-              </button>
-            </div>
-          </div>
-
         </div>
+
+        {/* Category Filter Buttons */}
+        <div className="flex gap-3 mb-10 overflow-x-auto pb-2">
+          {categories.map((cat, index) => (
+            <button
+              key={index}
+              onClick={() => handleCategoryChange(cat)}
+              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                selectedCategory === cat 
+                  ? 'bg-[#6320ee] text-white shadow-md' 
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-[#6320ee] hover:text-[#6320ee]'
+              }`}
+            >
+              {cat === 'All' ? 'همه محصولات' : cat === 'Course' ? '📚 دوره‌ها' : cat === 'Book' ? '📄 کتاب‌ها' : '🔑 لایسنس‌ها'}
+            </button>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-20 text-gray-500 font-bold text-sm">در حال بارگذاری محصولات...</div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} item={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 text-gray-500 font-bold text-sm">محصولی با این مشخصات یافت نشد!</div>
+        )}
       </div>
     </div>
   );
@@ -3426,154 +3934,208 @@ module.exports = {
 };
 </file>
 
-<file path="backend/controllers/sellerController.js">
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-// Create any digital product (Course, Book, or License)
-const createProduct = async (req, res) => {
-    try {
-        const { title, description, price, category, fileUrl } = req.body;
-        const sellerId = req.user.userId;
-
-        if (!title || !price || !category) {
-            return res.status(400).json({ message: "وارد کردن عنوان، قیمت و دسته‌بندی الزامی است." });
-        }
-
-        if (category !== 'License' && !fileUrl) {
-            return res.status(400).json({ message: "برای این نوع محصول، وارد کردن لینک فایل یا استریم الزامی است." });
-        }
-
-        const newProduct = await prisma.product.create({
-            data: {
-                title,
-                description,
-                price: parseFloat(price),
-                category,
-                fileUrl: category === 'License' ? '' : fileUrl,
-                status: 'PENDING',
-                sellerId: sellerId
-            }
-        });
-
-        res.status(201).json({
-            message: "محصول با موفقیت ثبت شد و در انتظار تایید مدیریت است.",
-            product: newProduct
-        });
-    } catch (error) {
-        console.error("Seller Create Product Core Error:", error);
-        res.status(500).json({ message: "خطا در ثبت محصول جدید در پایگاه داده." });
-    }
-};
-
-// Fetch store statistics, charts context, and clients registry
-const getSellerAnalytics = async (req, res) => {
-    try {
-        const sellerId = req.user.userId;
-
-        const products = await prisma.product.findMany({
-            where: { sellerId },
-            include: {
-                reviews: { include: { user: { select: { fullName: true, email: true } } } },
-                orderItems: { include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } } }
-            }
-        });
-
-        let totalEarnings = 0;
-        let totalSales = 0;
-        const customersMap = new Map();
-        const recentReviews = [];
-
-        products.forEach(product => {
-            product.orderItems.forEach(item => {
-                if (item.order.status === 'COMPLETED') {
-                    totalEarnings += item.price;
-                    totalSales += 1;
-                    const buyer = item.order.buyer;
-                    if (buyer) {
-                        customersMap.set(buyer.email, {
-                            fullName: buyer.fullName,
-                            email: buyer.email,
-                            productTitle: product.title,
-                            purchaseDate: item.order.createdAt
-                        });
-                    }
-                }
-            });
-
-            product.reviews.forEach(review => {
-                recentReviews.push({
-                    id: review.id,
-                    rating: review.rating,
-                    comment: review.comment,
-                    productTitle: product.title,
-                    buyerName: review.user.fullName,
-                    createdAt: review.createdAt
-                });
-            });
-        });
-
-        recentReviews.sort((a, b) => b.createdAt - a.createdAt);
-
-        const monthlyData = [
-            { month: 'فروردین', sales: Math.round(totalSales * 0.1), earnings: Math.round(totalEarnings * 0.1) },
-            { month: 'اردیبهشت', sales: Math.round(totalSales * 0.15), earnings: Math.round(totalEarnings * 0.15) },
-            { month: 'خرداد', sales: Math.round(totalSales * 0.2), earnings: Math.round(totalEarnings * 0.2) },
-            { month: 'تیر', sales: Math.round(totalSales * 0.55), earnings: Math.round(totalEarnings * 0.55) },
-        ];
-
-        res.status(200).json({
-            productsCount: products.length,
-            totalEarnings,
-            totalSales,
-            products: products.map(p => ({ id: p.id, title: p.title, price: p.price, category: p.category, status: p.status, description: p.description, fileUrl: p.fileUrl })),
-            customers: Array.from(customersMap.values()),
-            recentReviews: recentReviews.slice(0, 5),
-            monthlyData
-        });
-    } catch (error) {
-        console.error("Seller Analytics Extraction Error:", error);
-        res.status(500).json({ message: "Failed to extract seller performance metrics." });
-    }
-};
-
-// Modify product properties
-const updateProduct = async (req, res) => {
-    try {
-        const { productId, title, description, price, category } = req.body;
-        const sellerId = req.user.userId;
-
-        const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
-
-        if (!product || product.sellerId !== sellerId) {
-            return res.status(403).json({ message: "Unauthorized operation on this asset resource." });
-        }
-
-        const updatedProduct = await prisma.product.update({
-            where: { id: parseInt(productId) },
-            data: {
-                title,
-                description,
-                price: parseFloat(price),
-                category,
-                status: 'PENDING'
-            }
-        });
-
-        res.status(200).json({ message: "Product modified successfully and returned to queue.", product: updatedProduct });
-    } catch (error) {
-        console.error("Seller Edit Product Exception:", error);
-        res.status(500).json({ message: "Failed to modify product attributes." });
-    }
-};
-
-module.exports = { createProduct, getSellerAnalytics, updateProduct };
-</file>
-
 <file path="backend/.gitignore">
 node_modules
 /generated/prisma
 .env
+</file>
+
+<file path="frontend/src/components/seller/CreateProductModal.jsx">
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function CreateProductModal({ isOpen, onClose, onSave }) {
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('Course'); 
+  const [fileUrl, setFileUrl] = useState('');
+  const [description, setDescription] = useState('');
+  const [allowSubscription, setAllowSubscription] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    await onSave({
+      title,
+      price: parseFloat(price),
+      category,
+      fileUrl: category === 'License' ? '' : fileUrl,
+      description,
+      allowSubscription: category === 'Course' ? allowSubscription : false
+    });
+  };
+
+  return createPortal(
+    <>
+      <div 
+        onClick={() => !isSubmitting && onClose()} 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
+      />
+      <div 
+        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">➕ ثبت و انتشار کالا یا دوره جدید</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان یا نام محصول</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: آموزش پیشرفته ری‌اکت یا لایسنس ویندوز ۱۱" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">نوع محصول دیجیتال</label>
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)} 
+              className="w-full p-3 rounded-xl border border-gray-200 text-xs font-black bg-white focus:outline-none focus:border-[#6320ee] cursor-pointer"
+            >
+              <option value="Course">📚 دوره آموزشی (پخش آنلاین ویدیو)</option>
+              <option value="Book">📄 کتاب دیجیتال / فایل چاپی (PDF / ZIP)</option>
+              <option value="License">🔑 لایسنس اختصاصی نرم‌افزار / کد فعال‌سازی</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت پایه (تومان)</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="مثال: ۱۵۰۰۰۰" className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          {category !== 'License' && (
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-2">
+                {category === 'Course' ? '🔗 لینک استریم ویدیوها' : '🔗 آدرس امن دانلود فایل'}
+              </label>
+              <input type="url" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://storage.digistore.com/..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+            </div>
+          )}
+
+          {/* Conditional Subscription Toggle (Only for Courses) */}
+          {category === 'Course' && (
+            <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100 flex items-center justify-between">
+              <div className="text-right">
+                <span className="block text-xs font-black text-gray-900">امکان دسترسی با خرید اشتراک</span>
+                <span className="text-[10px] text-gray-400 font-bold mt-1 block">دانشجویان دارای اشتراک فعال دیجی‌کورس به این دوره دسترسی داشته باشند؟</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={allowSubscription} 
+                onChange={(e) => setAllowSubscription(e.target.checked)}
+                className="w-5 h-5 accent-[#6320ee] cursor-pointer"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی کالا</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="سرفصل‌ها یا مشخصات فنی فایل را وارد کنید..." className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
+              {isSubmitting ? 'در حال ارسال درخواست...' : 'ارسال کالا جهت بررسی و تایید مدیر'}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
+          </div>
+        </form>
+      </div>
+    </>,
+    document.body
+  );
+}
+</file>
+
+<file path="frontend/src/components/seller/EditProductModal.jsx">
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+export default function EditProductModal({ isOpen, onClose, product, onSave }) {
+  const [title, setTitle] = useState(product?.title || '');
+  const [price, setPrice] = useState(product?.price || '');
+  const [category, setCategory] = useState(product?.category || 'Course');
+  const [description, setDescription] = useState(product?.description || '');
+  const [allowSubscription, setAllowSubscription] = useState(product?.allowSubscription ?? true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSave({ 
+      productId: product.id, 
+      title, 
+      price: parseFloat(price), 
+      category, 
+      description,
+      allowSubscription: category === 'Course' ? allowSubscription : false
+    });
+  };
+
+  return createPortal(
+    <>
+      <div 
+        onClick={() => !isSubmitting && onClose()} 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[99998] animate-in fade-in duration-200" 
+      />
+      <div 
+        className="fixed inset-x-4 bottom-0 sm:inset-0 sm:m-auto max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col p-6 z-[99999] h-fit max-h-[90vh] overflow-y-auto text-right animate-in fade-in zoom-in-95 duration-200" 
+        style={{ direction: 'rtl' }}
+      >
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
+          <h3 className="text-base font-black text-gray-900">✏️ ویرایش مشخصات محصول</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 font-bold cursor-pointer" disabled={isSubmitting}>✕</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">عنوان محصول</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">قیمت (تومان)</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#6320ee]" required />
+          </div>
+
+          {/* Conditional Subscription Toggle (Only for Courses) */}
+          {category === 'Course' && (
+            <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100 flex items-center justify-between">
+              <div className="text-right">
+                <span className="block text-xs font-black text-gray-900">امکان دسترسی با خرید اشتراک</span>
+                <span className="text-[10px] text-gray-400 font-bold mt-1 block">دانشجویان دارای اشتراک فعال دیجی‌کورس به این دوره دسترسی داشته باشند؟</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={allowSubscription} 
+                onChange={(e) => setAllowSubscription(e.target.checked)}
+                className="w-5 h-5 accent-[#6320ee] cursor-pointer"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">توضیحات تکمیلی</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]" />
+          </div>
+          <div className="pt-4 flex gap-3">
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#6320ee] text-white text-xs font-black rounded-xl hover:bg-[#4d14c2] transition-colors cursor-pointer disabled:opacity-50">
+              {isSubmitting ? 'در حال ذخیره‌سازی...' : 'اعمال تغییرات و بررسی مجدد'}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer" disabled={isSubmitting}>انصراف</button>
+          </div>
+        </form>
+      </div>
+    </>,
+    document.body
+  );
+}
 </file>
 
 <file path="frontend/src/components/UserMenu.jsx">
@@ -3674,6 +4236,368 @@ export default function UserMenu({ user, onLogout }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/src/pages/Home.jsx">
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Hero from '../components/Hero';
+import ProductCard from '../components/ProductCard';
+import SellerCTA from '../components/SellerCTA';
+import Footer from '../components/Footer'; // Import the new Footer component
+
+export default function Home() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [featuredItems, setFeaturedItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLatestProducts = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
+        if (response.ok) {
+          const data = await response.json();
+          setFeaturedItems(data.slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error fetching latest products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLatestProducts();
+  }, []);
+
+  const handleCategoryClick = (categoryName) => {
+    if (categoryName === 'All') {
+      navigate('/marketplace');
+    } else {
+      navigate(`/marketplace?category=${categoryName}`);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a] relative flex flex-col" style={{ direction: 'rtl' }}>
+      
+      {/* Background Lights */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-300/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-blue-300/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-indigo-200/20 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 flex-1">
+        <Navbar />
+
+        <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+
+        {/* Grid Categories Showcase Section */}
+        <section className="max-w-6xl mx-auto px-6 mb-24">
+          <h2 className="text-xl font-black mb-1.5 text-gray-900 tracking-tight">دسته‌بندی محصولات دیجیتال</h2>
+          <p className="text-xs font-bold text-gray-400 mb-8">کالای یادگیری یا ابزار کاربردی خود را انتخاب کنید</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {[
+              { icon: "🔑", label: "لایسنس و اشتراک اپ", type: "License", count: "تحویل آنی کلید" },
+              { icon: "🎓", label: "دوره‌های آموزشی ویدیویی", type: "Course", count: "پخش آنلاین ویدیو" },
+              { icon: "📖", label: "کتاب و جزوات الکترونیکی", type: "Book", count: "دانلود فایل PDF" },
+              { icon: "📦", label: "همه محصولات بازارچه", type: "All", count: "مشاهده آرشیو کامل" }
+            ].map((cat, index) => (
+              <div 
+                key={index} 
+                onClick={() => handleCategoryClick(cat.type)}
+                className="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-xs hover:border-[#6320ee] hover:shadow-md transition-all duration-200 cursor-pointer group"
+              >
+                <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-200">{cat.icon}</div>
+                <h3 className="text-xs font-black text-gray-900 mb-1">{cat.label}</h3>
+                <p className="text-[10px] font-bold text-gray-400 tracking-wide">{cat.count}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Top Products Cards Feed Section */}
+        <section className="max-w-6xl mx-auto px-6 mb-24">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-lg font-black text-gray-900 tracking-tight">ویترین محصولات برتر بازارچه</h2>
+              <p className="text-xs font-bold text-gray-400 mt-1">تضمین لایسنس‌های معتبر قانونی و دسترسی همیشگی به فایل‌ها</p>
+            </div>
+            <Link to="/marketplace" className="text-xs font-black text-[#6d28d9] hover:underline bg-purple-50 px-3 py-1.5 rounded-xl">مشاهده همه محصولات ←</Link>
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-12 text-gray-400 font-bold text-xs">در حال بارگذاری محصولات...</div>
+          ) : featuredItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredItems.map((item) => (
+                <ProductCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-400 font-bold text-xs">هیچ محصولی یافت نشد.</div>
+          )}
+        </section>
+
+        <SellerCTA />
+      </div>
+
+      {/* Render the clean enterprise footer component */}
+      <Footer />
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/src/pages/ProductDetails.jsx">
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import { CartContext } from '../context/CartContext';
+
+export default function ProductDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Review form states
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+
+  const { addToCart, cart } = useContext(CartContext);
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+  // Fetch product and reviews from API
+  const fetchData = async () => {
+    try {
+      // Fetch product details
+      const productRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
+      if (!productRes.ok) {
+        navigate('/marketplace');
+        return;
+      }
+      const productData = await productRes.json();
+      setProduct(productData);
+
+      // Fetch product reviews
+      const reviewsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}/reviews`);
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json();
+        setReviews(reviewsData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch page data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id, navigate]);
+
+  const handleBuyClick = () => {
+    const isAlreadyInCart = cart.some(item => item.id === product.id);
+    if (isAlreadyInCart) {
+      alert("این محصول قبلاً به سبد خرید اضافه شده است!");
+      return;
+    }
+    addToCart(product);
+  };
+
+  // Submit new product review
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!token) {
+      setMessage({ text: 'برای ثبت نظر ابتدا باید وارد حساب کاربری شوید.', type: 'error' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ rating, comment })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ text: data.message, type: 'success' });
+        setComment('');
+        setRating(5);
+        // Refresh data to reflect new average score and count
+        fetchData(); 
+      } else {
+        setMessage({ text: data.message, type: 'error' });
+      }
+    } catch (error) {
+      setMessage({ text: 'خطا در ارتباط با سرور.', type: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) return <div className="min-h-screen bg-[#f8f8fc] flex items-center justify-center font-black">در حال بارگذاری...</div>;
+  if (!product) return null;
+
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
+        
+        {/* Main Product Panel */}
+        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xs flex flex-col md:flex-row gap-8 mb-8">
+          
+          <div className="flex-1 space-y-6">
+            <div>
+              <span className="px-3 py-1 bg-purple-50 text-[#6d28d9] text-[10px] font-black rounded-lg mb-4 inline-block">
+                {product.category === 'Course' ? 'دوره آموزشی' : product.category === 'License' ? 'لایسنس' : 'کتاب / فایل'}
+              </span>
+              <h1 className="text-3xl font-black text-gray-900 leading-tight">{product.title}</h1>
+              <p className="text-sm font-bold text-gray-400 mt-2">فروشنده: {product.seller?.storeName || product.seller?.fullName}</p>
+            </div>
+            
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 mb-2">توضیحات محصول</h3>
+              <p className="text-xs font-semibold text-gray-600 leading-relaxed whitespace-pre-wrap">{product.description}</p>
+            </div>
+          </div>
+
+          <div className="w-full md:w-80 flex flex-col gap-4">
+            <div className="p-6 bg-gradient-to-b from-purple-50 to-white rounded-3xl border border-purple-100/50 shadow-sm text-center">
+              <span className="block text-xs font-bold text-gray-500 mb-1">قیمت نهایی</span>
+              <span className="text-3xl font-black text-[#6d28d9]">{product.price.toLocaleString('en-US')} <span className="text-sm">تومان</span></span>
+              
+              {/* Rating metrics badge */}
+              <div className="mt-4 flex items-center justify-center gap-2 bg-white py-2 px-3 rounded-2xl border border-purple-100/50 text-xs font-black text-gray-700">
+                <span className="text-amber-500 text-sm">⭐ {product.averageRating?.toFixed(1) || '0.0'}</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-[10px] text-gray-400 font-bold">{product.reviewCount || 0} نظر خریداران</span>
+              </div>
+
+              <button onClick={handleBuyClick} className="w-full mt-6 py-3.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer">
+                افزودن به سبد خرید
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Reviews and Ratings Subsection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          
+          {/* List of product comments */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs space-y-4">
+            <h2 className="text-lg font-black text-gray-900">💬 نظرات خریداران ({reviews.length})</h2>
+            
+            {reviews.length === 0 ? (
+              <div className="py-12 text-center text-xs font-bold text-gray-400 bg-gray-50/50 rounded-2xl border border-dashed border-gray-100">
+                هنوز هیچ نظری برای این محصول ثبت نشده است.
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1">
+                {reviews.map((rev) => (
+                  <div key={rev.id} className="p-4 rounded-2xl bg-gray-50/50 border border-gray-100 text-right">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-black text-gray-800">{rev.user?.fullName}</span>
+                      <span className="text-xs text-amber-500 font-black">
+                        {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-gray-600 leading-relaxed">{rev.comment || "بدون توضیحات متنی."}</p>
+                    <span className="block text-[9px] text-gray-400 mt-2 font-mono">
+                      {new Date(rev.createdAt).toLocaleDateString('fa-IR')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Submit Review Form Box */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs">
+            <h2 className="text-lg font-black text-gray-900 mb-4">✍️ ثبت بازخورد و امتیاز علمی</h2>
+            
+            {!token ? (
+              <div className="py-8 text-center text-xs font-bold text-gray-400 bg-purple-50/30 rounded-2xl border border-purple-100/50">
+                جهت ثبت امتیاز و نظر کاربری، ابتدا وارد حساب کاربری خود شوید.
+              </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} className="space-y-4">
+                
+                {/* Rating selection stars */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-2">امتیاز شما به این محصول:</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setRating(num)}
+                        className={`text-2xl cursor-pointer transition-transform hover:scale-110 ${
+                          num <= rating ? 'text-amber-500' : 'text-gray-200'
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comment textarea text input */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-2">متن نظر یا بازخورد شما</label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="نظرات، انتقادات یا نحوه تدریس/کیفیت فایل را بنویسید..."
+                    className="w-full p-3 rounded-xl border border-gray-200 text-xs font-semibold h-24 resize-none focus:outline-none focus:border-[#6320ee]"
+                    required
+                  />
+                </div>
+
+                {/* Response notification alert banner */}
+                {message.text && (
+                  <div className={`p-3 rounded-xl text-xs font-black border ${
+                    message.type === 'success' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-600 border-red-100'
+                  }`}>
+                    {message.text}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-gray-900 hover:bg-black text-white text-xs font-black rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? 'در حال ارسال بازخورد...' : '🚀 ثبت نهایی نظر علمی'}
+                </button>
+              </form>
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -3870,6 +4794,164 @@ const getMyOrders = async (req, res) => {
 };
 
 module.exports = { requestPayment, verifyPayment, getMyOrders };
+</file>
+
+<file path="backend/controllers/sellerController.js">
+// File: backend/controllers/sellerController.js
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Create any digital product (Course, Book, or License)
+const createProduct = async (req, res) => {
+    try {
+        const { title, description, price, category, fileUrl, allowSubscription } = req.body;
+        const sellerId = req.user.userId;
+
+        if (!title || !price || !category) {
+            return res.status(400).json({ message: "وارد کردن عنوان، قیمت و دسته‌بندی الزامی است." });
+        }
+
+        if (category !== 'License' && !fileUrl) {
+            return res.status(400).json({ message: "برای این نوع محصول، وارد کردن لینک فایل یا استریم الزامی است." });
+        }
+
+        const newProduct = await prisma.product.create({
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                fileUrl: category === 'License' ? '' : fileUrl,
+                status: 'PENDING',
+                sellerId: sellerId,
+                // Only allow subscription flag if the category is Course
+                allowSubscription: category === 'Course' ? Boolean(allowSubscription) : false
+            }
+        });
+
+        res.status(201).json({
+            message: "محصول با موفقیت ثبت شد و در انتظار تایید مدیریت است.",
+            product: newProduct
+        });
+    } catch (error) {
+        console.error("Seller Create Product Core Error:", error);
+        res.status(500).json({ message: "خطا در ثبت محصول جدید در پایگاه داده." });
+    }
+};
+
+// Fetch store statistics, charts context, and clients registry
+const getSellerAnalytics = async (req, res) => {
+    try {
+        const sellerId = req.user.userId;
+
+        const products = await prisma.product.findMany({
+            where: { sellerId },
+            include: {
+                reviews: { include: { user: { select: { fullName: true, email: true } } } },
+                orderItems: { include: { order: { include: { buyer: { select: { fullName: true, email: true } } } } } }
+            }
+        });
+
+        let totalEarnings = 0;
+        let totalSales = 0;
+        const customersMap = new Map();
+        const recentReviews = [];
+
+        products.forEach(product => {
+            product.orderItems.forEach(item => {
+                if (item.order.status === 'COMPLETED') {
+                    totalEarnings += item.price;
+                    totalSales += 1;
+                    const buyer = item.order.buyer;
+                    if (buyer) {
+                        customersMap.set(buyer.email, {
+                            fullName: buyer.fullName,
+                            email: buyer.email,
+                            productTitle: product.title,
+                            purchaseDate: item.order.createdAt
+                        });
+                    }
+                }
+            });
+
+            product.reviews.forEach(review => {
+                recentReviews.push({
+                    id: review.id,
+                    rating: review.rating,
+                    comment: review.comment,
+                    productTitle: product.title,
+                    buyerName: review.user.fullName,
+                    createdAt: review.createdAt
+                });
+            });
+        });
+
+        recentReviews.sort((a, b) => b.createdAt - a.createdAt);
+
+        const monthlyData = [
+            { month: 'فروردین', sales: Math.round(totalSales * 0.1), earnings: Math.round(totalEarnings * 0.1) },
+            { month: 'اردیبهشت', sales: Math.round(totalSales * 0.15), earnings: Math.round(totalEarnings * 0.15) },
+            { month: 'خرداد', sales: Math.round(totalSales * 0.2), earnings: Math.round(totalEarnings * 0.2) },
+            { month: 'تیر', sales: Math.round(totalSales * 0.55), earnings: Math.round(totalEarnings * 0.55) },
+        ];
+
+        res.status(200).json({
+            productsCount: products.length,
+            totalEarnings,
+            totalSales,
+            products: products.map(p => ({ 
+                id: p.id, 
+                title: p.title, 
+                price: p.price, 
+                category: p.category, 
+                status: p.status, 
+                description: p.description, 
+                fileUrl: p.fileUrl,
+                allowSubscription: p.allowSubscription
+            })),
+            customers: Array.from(customersMap.values()),
+            recentReviews: recentReviews.slice(0, 5),
+            monthlyData
+        });
+    } catch (error) {
+        console.error("Seller Analytics Extraction Error:", error);
+        res.status(500).json({ message: "Failed to extract seller performance metrics." });
+    }
+};
+
+// Modify product properties
+const updateProduct = async (req, res) => {
+    try {
+        const { productId, title, description, price, category, allowSubscription } = req.body;
+        const sellerId = req.user.userId;
+
+        const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
+
+        if (!product || product.sellerId !== sellerId) {
+            return res.status(403).json({ message: "Unauthorized operation on this asset resource." });
+        }
+
+        const updatedProduct = await prisma.product.update({
+            where: { id: parseInt(productId) },
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                status: 'PENDING',
+                allowSubscription: category === 'Course' ? Boolean(allowSubscription) : false
+            }
+        });
+
+        res.status(200).json({ message: "Product modified successfully and returned to queue.", product: updatedProduct });
+    } catch (error) {
+        console.error("Seller Edit Product Exception:", error);
+        res.status(500).json({ message: "Failed to modify product attributes." });
+    }
+};
+
+module.exports = { createProduct, getSellerAnalytics, updateProduct };
 </file>
 
 <file path="frontend/src/components/Navbar.jsx">
@@ -4158,145 +5240,6 @@ export default function Navbar() {
 }
 </file>
 
-<file path="frontend/src/pages/AdminDashboard.jsx">
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import AdminProductManagement from '../components/admin/AdminProductManagement';
-import AdminUserManagement from '../components/admin/AdminUserManagement';
-import InspectionModal from '../components/admin/InspectionModal';
-
-export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('pending');
-  const [pendingProducts, setPendingProducts] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSilentUpdating, setIsSilentUpdating] = useState(false);
-  
-  const [inspectType, setInspectType] = useState(null);
-  const [inspectEntity, setInspectEntity] = useState(null);
-
-  const navigate = useNavigate();
-
-  // Load administrative workspace context smoothly from DB
-  const loadAdminData = async (isSilent = false) => {
-    if (!isSilent) setIsLoading(true);
-    else setIsSilentUpdating(true);
-
-    const token = localStorage.getItem('token');
-    
-    // Dynamically query target endpoints based on the active UI tab selection state
-    const endpointPath = activeTab === 'pending' ? 'products' : 'users';
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${endpointPath}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (activeTab === 'pending') setPendingProducts(data);
-        else if (activeTab === 'users') setUsers(data);
-      } else {
-        navigate('/');
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-      setIsSilentUpdating(false);
-    }
-  };
-
-  useEffect(() => { loadAdminData(false); }, [activeTab]);
-
-  // Execute product verification with safe error handling
-  const handleVerify = async (productId, status) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ productId, status })
-      });
-      if (response.ok) loadAdminData(true);
-    } catch (error) {
-      console.error("Verification failed:", error);
-    }
-  };
-
-  // Execute user ban toggle with safe error handling
-  const handleToggleBan = async (userId, isBanned) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ userId, isBanned })
-      });
-      if (response.ok) loadAdminData(true);
-    } catch (error) {
-      console.error("Ban toggle failed:", error);
-    }
-  };
-
-  // Execute role mutation with safe error handling
-  const handleRoleChange = async (userId, role) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ userId, role })
-      });
-      if (response.ok) loadAdminData(true);
-    } catch (error) {
-       console.error("Role change failed:", error);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
-      <Navbar />
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-12">
-        
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900">🛠️ لایه کنترلی پلتفرم ادمین</h1>
-            <p className="text-sm text-gray-500 mt-2 font-medium">نظارت کلی و اعمال سطوح دسترسی بر کالاها و اعضای سیستم</p>
-          </div>
-          {isSilentUpdating && (
-            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-purple-50 text-purple-700 text-[10px] font-black rounded-full border border-purple-100/50 animate-pulse">
-              🔄 همگام‌سازی نامحسوس دیتابیس...
-            </div>
-          )}
-        </div>
-        
-        <div className="flex gap-2 border-b border-gray-200 my-6">
-          <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'pending' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>📦 مدیریت کالاها و دوره‌ها</button>
-          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'users' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>👥 نظارت کاربری و سطوح دسترسی</button>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs min-h-[400px]">
-          {isLoading ? (
-            <div className="flex flex-col justify-center items-center py-20 gap-3">
-              <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-              <p className="text-xs font-bold text-gray-400">در حال دریافت داده‌های امنیتی مدیریت...</p>
-            </div>
-          ) : (
-            <div className="animate-in fade-in duration-300">
-              {activeTab === 'pending' && <AdminProductManagement products={pendingProducts} onVerify={handleVerify} onInspect={(p) => { setInspectType('product'); setInspectEntity(p); }} />}
-              {activeTab === 'users' && <AdminUserManagement users={users} onToggleBan={handleToggleBan} onRoleChange={handleRoleChange} onInspect={(u) => { setInspectType('user'); setInspectEntity(u); }} />}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <InspectionModal isOpen={!!inspectEntity} onClose={() => { setInspectType(null); setInspectEntity(null); }} type={inspectType} entity={inspectEntity} />
-    </div>
-  );
-}
-</file>
-
 <file path="frontend/src/pages/Login.jsx">
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -4557,72 +5500,133 @@ export default function SellerDashboard() {
 }
 </file>
 
-<file path="backend/controllers/productController.js">
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+<file path="frontend/src/pages/AdminDashboard.jsx">
+import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
+import AdminProductManagement from '../components/admin/AdminProductManagement';
+import AdminUserManagement from '../components/admin/AdminUserManagement';
+import InspectionModal from '../components/admin/InspectionModal';
 
-// Fetch marketplace approved item indexation structure with limit support
-const getAllPublicProducts = async (req, res) => {
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('pending');
+  const [pendingProducts, setPendingProducts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSilentUpdating, setIsSilentUpdating] = useState(false);
+  
+  const [inspectType, setInspectType] = useState(null);
+  const [inspectEntity, setInspectEntity] = useState(null);
+
+  const loadAdminData = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
+    else setIsSilentUpdating(true);
+
+    const token = localStorage.getItem('token');
+    
+    const endpointPath = activeTab === 'pending' ? 'products' : 'users';
+
     try {
-        const { search, limit } = req.query; // Extract limit from query
-        const products = await prisma.product.findMany({
-            where: {
-                status: 'APPROVED',
-                ...(search && {
-                    OR: [
-                        { title: { contains: search, mode: 'insensitive' } },
-                        { description: { contains: search, mode: 'insensitive' } }
-                    ]
-                })
-            },
-            include: {
-                seller: { select: { fullName: true, storeName: true } }
-            },
-            orderBy: { createdAt: 'desc' },
-            ...(limit && { take: parseInt(limit) }) // Apply strict limit to DB query if provided
-        });
-        res.status(200).json(products);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/${endpointPath}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (activeTab === 'pending') setPendingProducts(data);
+        else if (activeTab === 'users') setUsers(data);
+      } 
     } catch (error) {
-        console.error("Get All Public Products Catalog Error:", error);
-        res.status(500).json({ message: "Failed to fetch marketplace catalog database logs." });
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setIsSilentUpdating(false);
     }
-};
+  };
 
-// Fetch a single product by its ID for the product details page
-const getProductById = async (req, res) => {
+  useEffect(() => { loadAdminData(false); }, [activeTab]);
+
+  const handleVerify = async (productId, status) => {
     try {
-        const { id } = req.params;
-        const product = await prisma.product.findUnique({
-            where: { id: parseInt(id) },
-            include: {
-                seller: { select: { fullName: true, storeName: true } }
-            }
-        });
-
-        if (!product) {
-            return res.status(404).json({ message: "محصول مورد نظر یافت نشد." });
-        }
-
-        res.status(200).json(product);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/verify-product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ productId, status })
+      });
+      if (response.ok) loadAdminData(true);
     } catch (error) {
-        console.error("Get Product By ID Error:", error);
-        res.status(500).json({ message: "خطا در دریافت اطلاعات محصول از پایگاه داده." });
+      console.error("Verification failed:", error);
     }
-};
+  };
 
-module.exports = { getAllPublicProducts, getProductById };
-</file>
+  const handleToggleBan = async (userId, isBanned) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, isBanned })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+      console.error("Ban toggle failed:", error);
+    }
+  };
 
-<file path="backend/routes/productRoutes.js">
-const express = require('express');
-const router = express.Router();
-const { getAllPublicProducts, getProductById } = require('../controllers/productController');
+  const handleRoleChange = async (userId, role) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/user-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, role })
+      });
+      if (response.ok) loadAdminData(true);
+    } catch (error) {
+       console.error("Role change failed:", error);
+    }
+  };
 
-// Map the endpoints
-router.get('/', getAllPublicProducts);
-router.get('/:id', getProductById); // Added the missing route
+  return (
+    <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-12">
+        
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">🛠️ لایه کنترلی پلتفرم ادمین</h1>
+            <p className="text-sm text-gray-500 mt-2 font-medium">نظارت کلی و اعمال سطوح دسترسی بر کالاها و اعضای سیستم</p>
+          </div>
+          {isSilentUpdating && (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-purple-50 text-purple-700 text-[10px] font-black rounded-full border border-purple-100/50 animate-pulse">
+              🔄 همگام‌سازی نامحسوس دیتابیس...
+            </div>
+          )}
+        </div>
+        
+        <div className="flex gap-2 border-b border-gray-200 my-6">
+          <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'pending' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>📦 مدیریت کالاها و دوره‌ها</button>
+          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'users' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>👥 نظارت کاربری و سطوح دسترسی</button>
+        </div>
 
-module.exports = router;
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs min-h-[400px]">
+          {isLoading ? (
+            <div className="flex flex-col justify-center items-center py-20 gap-3">
+              <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+              <p className="text-xs font-bold text-gray-400">در حال دریافت داده‌های امنیتی مدیریت...</p>
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-300">
+              {activeTab === 'pending' && <AdminProductManagement products={pendingProducts} onVerify={handleVerify} onInspect={(p) => { setInspectType('product'); setInspectEntity(p); }} />}
+              {activeTab === 'users' && <AdminUserManagement users={users} onToggleBan={handleToggleBan} onRoleChange={handleRoleChange} onInspect={(u) => { setInspectType('user'); setInspectEntity(u); }} />}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <InspectionModal isOpen={!!inspectEntity} onClose={() => { setInspectType(null); setInspectEntity(null); }} type={inspectType} entity={inspectEntity} />
+    </div>
+  );
+}
 </file>
 
 <file path="frontend/src/pages/Register.jsx">
@@ -4955,6 +5959,235 @@ const loginUser = async (req, res) => {
 module.exports = { registerUser, loginUser };
 </file>
 
+<file path="backend/controllers/productController.js">
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Fetch marketplace approved item indexation structure with limit support
+const getAllPublicProducts = async (req, res) => {
+    try {
+        const { search, limit } = req.query;
+        const products = await prisma.product.findMany({
+            where: {
+                status: 'APPROVED',
+                ...(search && {
+                    OR: [
+                        { title: { contains: search, mode: 'insensitive' } },
+                        { description: { contains: search, mode: 'insensitive' } }
+                    ]
+                })
+            },
+            include: {
+                seller: { select: { fullName: true, storeName: true } }
+            },
+            orderBy: { createdAt: 'desc' },
+            ...(limit && { take: parseInt(limit) })
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error("Get All Public Products Catalog Error:", error);
+        res.status(500).json({ message: "Failed to fetch marketplace catalog database logs." });
+    }
+};
+
+// Fetch a single product by its ID for the product details page
+const getProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await prisma.product.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                seller: { select: { fullName: true, storeName: true } }
+            }
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: "محصول مورد نظر یافت نشد." });
+        }
+
+        res.status(200).json(product);
+    } catch (error) {
+        console.error("Get Product By ID Error:", error);
+        res.status(500).json({ message: "خطا در دریافت اطلاعات محصول از پایگاه داده." });
+    }
+};
+
+// Get all verified reviews for a specific product
+const getProductReviews = async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        const reviews = await prisma.review.findMany({
+            where: { productId: parseInt(productId) },
+            include: {
+                user: { select: { fullName: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.status(200).json(reviews);
+    } catch (error) {
+        console.error("Get Product Reviews Error:", error);
+        res.status(500).json({ message: "Failed to fetch product reviews." });
+    }
+};
+
+// Leave a rating and review for a product (Only for verified buyers)
+const createProductReview = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { rating, comment } = req.body;
+        const userId = req.user.userId;
+
+        const parsedProductId = parseInt(productId);
+        const ratingVal = parseInt(rating);
+
+        if (!ratingVal || ratingVal < 1 || ratingVal > 5) {
+            return res.status(400).json({ message: "امتیاز باید عددی بین ۱ تا ۵ باشد." });
+        }
+
+        // 1. Verify if the buyer has a COMPLETED order for this specific product
+        const completedOrder = await prisma.order.findFirst({
+            where: {
+                buyerId: userId,
+                status: 'COMPLETED',
+                items: {
+                    some: { productId: parsedProductId }
+                }
+            }
+        });
+
+        if (!completedOrder) {
+            return res.status(403).json({ message: "ثبت نظر فقط برای خریداران واقعی این محصول مجاز است." });
+        }
+
+        // 2. Check if user already reviewed this product (prevent duplicates)
+        const existingReview = await prisma.review.findUnique({
+            where: {
+                userId_productId: {
+                    userId: userId,
+                    productId: parsedProductId
+                }
+            }
+        });
+
+        if (existingReview) {
+            return res.status(400).json({ message: "شما قبلاً نظر خود را برای این محصول ثبت کرده‌اید." });
+        }
+
+        // 3. Save new review and update product metrics within a transaction
+        const result = await prisma.$transaction(async (tx) => {
+            // Create the review record
+            const newReview = await tx.review.create({
+                data: {
+                    rating: ratingVal,
+                    comment: comment || "",
+                    userId: userId,
+                    productId: parsedProductId
+                }
+            });
+
+            // Calculate new rating metrics from the database
+            const aggregations = await tx.review.aggregate({
+                where: { productId: parsedProductId },
+                _avg: { rating: true },
+                _count: { id: true }
+            });
+
+            const newAverage = aggregations._avg.rating || 0.0;
+            const newCount = aggregations._count.id || 0;
+
+            // Cache metrics inside the Product record
+            await tx.product.update({
+                where: { id: parsedProductId },
+                data: {
+                    averageRating: newAverage,
+                    reviewCount: newCount
+                }
+            });
+
+            return newReview;
+        });
+
+        res.status(201).json({
+            message: "ثبت نظر با موفقیت انجام شد.",
+            review: result
+        });
+
+    } catch (error) {
+        console.error("Create Product Review Error:", error);
+        res.status(500).json({ message: "خطا در ثبت نظر کاربری." });
+    }
+};
+
+module.exports = { 
+    getAllPublicProducts, 
+    getProductById,
+    getProductReviews,
+    createProductReview
+};
+</file>
+
+<file path="backend/routes/productRoutes.js">
+const express = require('express');
+const router = express.Router();
+const { 
+    getAllPublicProducts, 
+    getProductById, 
+    getProductReviews, 
+    createProductReview 
+} = require('../controllers/productController');
+const { verifyToken } = require('../middleware/authMiddleware');
+
+// Public route to fetch all products
+router.get('/', getAllPublicProducts);
+
+// Public route to fetch a single product details
+router.get('/:id', getProductById);
+
+// Public route to get reviews of a specific product
+router.get('/:productId/reviews', getProductReviews);
+
+// Protected route to write a review (requires valid token)
+router.post('/:productId/reviews', verifyToken, createProductReview);
+
+module.exports = router;
+</file>
+
+<file path="backend/package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "axios": "^1.18.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "prisma": "^6.19.3",
+    "supertest": "^7.2.2"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}
+</file>
+
 <file path="backend/prisma/schema.prisma">
 // prisma/schema.prisma
 
@@ -5009,23 +6242,29 @@ model User {
   reviews          Review[]
   subscriptions    UserSubscription[]
 }
-
 model Product {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String?
-  price       Float
-  category    String        @default("General") // Expected values: 'Course', 'Book', 'License'
-  fileUrl     String        @default("")        // Used for Book downloads or stream link references
-  status      ProductStatus @default(PENDING)   
-  sellerId    Int
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                Int           @id @default(autoincrement())
+  title             String
+  description       String?
+  price             Float
+  category          String        @default("General") // Expected values: 'Course', 'Book', 'License'
+  fileUrl           String        @default("")        // Used for Book downloads or stream link references
+  status            ProductStatus @default(PENDING)   
+  sellerId          Int
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  seller      User          @relation(fields: [sellerId], references: [id])
-  orderItems  OrderItem[]
-  licenses    License[]
-  reviews     Review[]
+  // Subscription setting (Only applicable to 'Course' category)
+  allowSubscription Boolean       @default(true)
+
+  // Cached fields for fast query sorting and "Top Products" displays
+  averageRating     Float         @default(0.0)
+  reviewCount       Int           @default(0)
+
+  seller            User          @relation(fields: [sellerId], references: [id])
+  orderItems        OrderItem[]
+  licenses          License[]
+  reviews           Review[]
 }
 
 model Order {
@@ -5104,7 +6343,7 @@ model Transaction {
 
 model Review {
   id        Int      @id @default(autoincrement())
-  rating    Int
+  rating    Int      // Stars from 1 to 5
   comment   String?
   userId    Int
   productId Int
@@ -5112,91 +6351,9 @@ model Review {
 
   user      User     @relation(fields: [userId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
-}
-</file>
 
-<file path="backend/package.json">
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "jest",
-    "dev": "nodemon server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@prisma/client": "^6.19.3",
-    "axios": "^1.18.1",
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
-  },
-  "devDependencies": {
-    "jest": "^30.4.2",
-    "nodemon": "^3.1.14",
-    "prisma": "^6.19.3",
-    "supertest": "^7.2.2"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  }
-}
-</file>
-
-<file path="frontend/src/App.jsx">
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { CartProvider } from './context/CartContext';
-
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Marketplace from './pages/Marketplace';
-import ProductDetails from './pages/ProductDetails';
-import SellerDashboard from './pages/SellerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import Settings from './pages/Settings';
-import Cart from './pages/Cart';
-import BuyerDashboard from './pages/BuyerDashboard';
-import PaymentResult from './pages/PaymentResult';
-
-export default function App() {
-  return (
-    <CartProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/cart" element={<Cart />} />
-          
-          <Route path="/seller/dashboard" element={<SellerDashboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/settings" element={<Settings />} />
-
-          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
-
-          <Route path="/payment-result" element={<PaymentResult />} />
-
-          <Route path="*" element={
-            <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
-              <h1 className="text-5xl font-black mb-2 text-[#6d28d9]">۴۰۴</h1>
-              <p className="text-gray-500 font-medium text-sm">صفحه مورد نظر در بازارچه یافت نشد!</p>
-            </div>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </CartProvider>
-  );
+  // Prevent a user from leaving multiple reviews on the same product
+  @@unique([userId, productId])
 }
 </file>
 
@@ -5238,6 +6395,83 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 module.exports = app;
+</file>
+
+<file path="frontend/src/App.jsx">
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
+
+// Standard Pages
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Marketplace from './pages/Marketplace';
+import ProductDetails from './pages/ProductDetails';
+import Cart from './pages/Cart';
+import PaymentResult from './pages/PaymentResult';
+
+// Dashboard & Protected Pages
+import SellerDashboard from './pages/SellerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import Settings from './pages/Settings';
+import BuyerDashboard from './pages/BuyerDashboard';
+
+// Security Component
+import ProtectedRoute from './components/ProtectedRoute';
+
+export default function App() {
+  return (
+    <CartProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/payment-result" element={<PaymentResult />} />
+
+          {/* Protected Routes */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/buyer/dashboard" element={
+            <ProtectedRoute>
+              <BuyerDashboard />
+            </ProtectedRoute>
+          } />
+
+          {/* Strictly Protected Routes (Role-based) */}
+          <Route path="/seller/dashboard" element={
+            <ProtectedRoute allowedRoles={['SELLER', 'ADMIN']}>
+              <SellerDashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+
+          {/* 404 Fallback */}
+          <Route path="*" element={
+            <div className="flex flex-col justify-center items-center min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
+              <h1 className="text-5xl font-black mb-2 text-[#6d28d9]">۴۰۴</h1>
+              <p className="text-gray-500 font-medium text-sm">صفحه مورد نظر در بازارچه یافت نشد!</p>
+            </div>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </CartProvider>
+  );
+}
 </file>
 
 </files>

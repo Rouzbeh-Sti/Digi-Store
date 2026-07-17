@@ -16,12 +16,26 @@ const getAllPublicProducts = async (req, res) => {
                 })
             },
             include: {
-                seller: { select: { fullName: true, storeName: true } }
+                seller: { select: { fullName: true, storeName: true } },
+                // Count only OrderItems that belong to a COMPLETED (paid) order,
+                // so pending/failed carts never inflate the "students/buyers" number
+                _count: {
+                    select: {
+                        orderItems: { where: { order: { status: 'COMPLETED' } } }
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' },
             ...(limit && { take: parseInt(limit) })
         });
-        res.status(200).json(products);
+
+        // Flatten _count.orderItems into a simple purchaseCount field for the frontend
+        const productsWithPurchaseCount = products.map(({ _count, ...product }) => ({
+            ...product,
+            purchaseCount: _count.orderItems
+        }));
+
+        res.status(200).json(productsWithPurchaseCount);
     } catch (error) {
         console.error("Get All Public Products Catalog Error:", error);
         res.status(500).json({ message: "Failed to fetch marketplace catalog database logs." });
@@ -35,7 +49,12 @@ const getProductById = async (req, res) => {
         const product = await prisma.product.findUnique({
             where: { id: parseInt(id) },
             include: {
-                seller: { select: { fullName: true, storeName: true } }
+                seller: { select: { fullName: true, storeName: true } },
+                _count: {
+                    select: {
+                        orderItems: { where: { order: { status: 'COMPLETED' } } }
+                    }
+                }
             }
         });
 
@@ -43,7 +62,8 @@ const getProductById = async (req, res) => {
             return res.status(404).json({ message: "محصول مورد نظر یافت نشد." });
         }
 
-        res.status(200).json(product);
+        const { _count, ...productData } = product;
+        res.status(200).json({ ...productData, purchaseCount: _count.orderItems });
     } catch (error) {
         console.error("Get Product By ID Error:", error);
         res.status(500).json({ message: "خطا در دریافت اطلاعات محصول از پایگاه داده." });
