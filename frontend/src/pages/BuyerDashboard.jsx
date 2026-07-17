@@ -62,45 +62,70 @@ export default function BuyerDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex flex-col p-5 bg-gradient-to-br from-purple-50/50 to-white rounded-2xl border border-purple-100/50 gap-4 shadow-sm hover:shadow-md transition-shadow">
-                      
-                      {/* Product Info */}
-                      <div>
-                        <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-[9px] font-black rounded mb-2">
-                          {item.product.category === 'Course' ? 'دوره' : item.product.category === 'License' ? 'لایسنس' : 'فایل'}
-                        </span>
-                        <h3 className="text-sm font-black text-gray-900 line-clamp-1">{item.product.title}</h3>
-                      </div>
-                      
-                      {/* License Key Box */}
-                      {item.license && (
-                        <div className="bg-white p-3 rounded-xl border border-gray-200 border-dashed flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-gray-400">کد اختصاصی:</span>
-                          <span className="text-xs font-black text-gray-900 font-mono tracking-wider">
-                            {item.license.licenseKey}
-                          </span>
+                  {order.items.map((item) => {
+                    // ۱. نمایش کارت مخصوص اگر آیتم خریداری شده "اشتراک" باشد
+                    if (item.subscriptionPlan) {
+                      return (
+                        <div key={item.id} className="flex flex-col p-5 bg-gradient-to-br from-green-50/50 to-white rounded-2xl border border-green-100/50 gap-4 shadow-sm hover:shadow-md transition-shadow">
+                          <div>
+                            <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-[9px] font-black rounded mb-2">
+                              اشتراک ویژه دیجی‌کورس
+                            </span>
+                            <h3 className="text-sm font-black text-gray-900 line-clamp-1">
+                              {item.subscriptionPlan.title}
+                            </h3>
+                          </div>
+                          <div className="mt-auto w-full py-2.5 bg-green-50 text-green-700 text-center text-xs font-black rounded-xl border border-green-100">
+                            ✅ اشتراک با موفقیت فعال شد
+                          </div>
                         </div>
-                      )}
+                      );
+                    }
 
-                      {/* Action Button */}
-                      {item.product.category !== 'License' && item.product.fileUrl ? (
-                        <a 
-                          href={item.product.fileUrl} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="mt-auto w-full py-2.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-center text-xs font-black rounded-xl transition-colors"
-                        >
-                          🔗 دریافت فایل / مشاهده
-                        </a>
-                      ) : (
-                        <div className="mt-auto w-full py-2.5 bg-green-50 text-green-700 text-center text-xs font-black rounded-xl border border-green-100">
-                          ✅ لایسنس آماده استفاده
+                    // در صورتی که دیتایی وجود نداشت از رندر کردن جلوگیری میکنیم تا سیستم کرش نکند
+                    if (!item.product) return null;
+
+                    // ۲. نمایش کارت عادی برای محصولات، دوره‌ها و لایسنس‌ها
+                    return (
+                      <div key={item.id} className="flex flex-col p-5 bg-gradient-to-br from-purple-50/50 to-white rounded-2xl border border-purple-100/50 gap-4 shadow-sm hover:shadow-md transition-shadow">
+                        
+                        {/* Product Info */}
+                        <div>
+                          <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-[9px] font-black rounded mb-2">
+                            {item.product.category === 'Course' ? 'دوره' : item.product.category === 'License' ? 'لایسنس' : 'فایل'}
+                          </span>
+                          <h3 className="text-sm font-black text-gray-900 line-clamp-1">{item.product.title}</h3>
                         </div>
-                      )}
-                      
-                    </div>
-                  ))}
+                        
+                        {/* License Key Box */}
+                        {item.license && (
+                          <div className="bg-white p-3 rounded-xl border border-gray-200 border-dashed flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-gray-400">کد اختصاصی:</span>
+                            <span className="text-xs font-black text-gray-900 font-mono tracking-wider">
+                              {item.license.licenseKey}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {item.product.category !== 'License' && item.product.fileUrl ? (
+                          <a 
+                            href={item.product.fileUrl} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="mt-auto w-full py-2.5 bg-[#6320ee] hover:bg-[#521ac4] text-white text-center text-xs font-black rounded-xl transition-colors"
+                          >
+                            🔗 دریافت فایل / مشاهده
+                          </a>
+                        ) : (
+                          <div className="mt-auto w-full py-2.5 bg-green-50 text-green-700 text-center text-xs font-black rounded-xl border border-green-100">
+                            ✅ لایسنس آماده استفاده
+                          </div>
+                        )}
+                        
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}

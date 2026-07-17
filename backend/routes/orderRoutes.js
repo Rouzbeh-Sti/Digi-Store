@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { requestPayment, verifyPayment, getMyOrders } = require('../controllers/orderController');
+const { requestPayment, verifyPayment, getMyOrders,
+    checkoutCart, claimWithSubscription } = require('../controllers/orderController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 // Protected route: Initiating payment requires login
@@ -11,5 +12,7 @@ router.get('/verify', verifyPayment);
 
 // Protected route: Viewing orders requires login
 router.get('/my-orders', verifyToken, getMyOrders);
+router.post('/checkout-cart', verifyToken, checkoutCart);
+router.post('/claim-subscription', verifyToken, claimWithSubscription);
 
 module.exports = router;
