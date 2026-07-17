@@ -1,0 +1,58 @@
+services:
+  # Database Service
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: digistore-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword}
+      POSTGRES_DB: ${DB_NAME:-digistore_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend Application Service
+  backend-app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: digistore-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-securepassword}@postgres-db:5432/${DB_NAME:-digistore_db}?schema=public
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey2026}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    # Wait for DB to be healthy, apply Prisma migrations, then start the server
+    command: >
+      sh -c "npx prisma migrate deploy && npm start"
+
+
+  # Frontend Application Service
+  frontend-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: digistore-frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend-app
+
+volumes:
+  postgres_data:
