@@ -91,11 +91,13 @@ model Order {
 model OrderItem {
   id        Int     @id @default(autoincrement())
   orderId   Int
-  productId Int
+  productId Int?
+  subscriptionPlanId Int?
   price     Float
 
   order     Order    @relation(fields: [orderId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product?  @relation(fields: [productId], references: [id])
+  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
   license   License?
 }
 
@@ -109,6 +111,7 @@ model SubscriptionPlan {
   createdAt   DateTime           @default(now())
   
   subscriptions UserSubscription[]
+  orderItems        OrderItem[]
 }
 
 model UserSubscription {

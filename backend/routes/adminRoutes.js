@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    getAdminProducts, 
-    verifyProduct, 
-    getAllUsers, 
-    toggleUserBan, 
-    updateUserRole, 
-    getAllTransactions 
+const {
+    getAdminProducts,
+    verifyProduct,
+    getAllUsers,
+    toggleUserBan,
+    updateUserRole,
+    getAllTransactions,
+    getSubscriptionPlans, updateSubscriptionPlan
 } = require('../controllers/adminController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 
@@ -19,5 +20,7 @@ router.get('/users', getAllUsers);
 router.post('/user-ban', toggleUserBan);
 router.post('/user-role', updateUserRole);
 router.get('/transactions', getAllTransactions);
+router.get('/subscription-plans', getSubscriptionPlans);
+router.put('/subscription-plans/:id', updateSubscriptionPlan);
 
 module.exports = router;

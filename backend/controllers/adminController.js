@@ -106,11 +106,43 @@ const getAllTransactions = async (req, res) => {
     }
 };
 
-module.exports = { 
-    getAdminProducts, 
-    verifyProduct, 
-    getAllUsers, 
-    toggleUserBan, 
-    updateUserRole, 
-    getAllTransactions 
+// fetch all subscription plans for admin management and overview
+const getSubscriptionPlans = async (req, res) => {
+    try {
+        const plans = await prisma.subscriptionPlan.findMany({ orderBy: { id: 'asc' } });
+        res.status(200).json(plans);
+    } catch (error) {
+        res.status(500).json({ message: "خطا در دریافت پلن‌ها." });
+    }
+};
+
+// Update price and active status of a subscription plan for admin control
+const updateSubscriptionPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { price, isActive } = req.body;
+
+        const updatedPlan = await prisma.subscriptionPlan.update({
+            where: { id: parseInt(id) },
+            data: {
+                price: parseFloat(price),
+                isActive: Boolean(isActive)
+            }
+        });
+        res.status(200).json({ message: "پلن با موفقیت بروزرسانی شد.", plan: updatedPlan });
+    } catch (error) {
+        res.status(500).json({ message: "خطا در بروزرسانی پلن." });
+    }
+};
+
+
+module.exports = {
+    getAdminProducts,
+    verifyProduct,
+    getAllUsers,
+    toggleUserBan,
+    updateUserRole,
+    getAllTransactions,
+    getSubscriptionPlans,
+    updateSubscriptionPlan
 };

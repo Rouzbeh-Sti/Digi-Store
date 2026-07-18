@@ -60,4 +60,48 @@ const downloadSecureProduct = async (req, res) => {
     }
 };
 
-module.exports = { getBuyerDashboard, downloadSecureProduct };
+// accessing digi-course products with active subscription
+const accessDigiCourseProduct = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const userId = req.user.userId;
+
+        // 1. check if user has an active subscription
+        const activeSub = await prisma.userSubscription.findFirst({
+            where: {
+                userId: userId,
+                isActive: true,
+                endDate: { gte: new Date() }
+            }
+        });
+
+        if (!activeSub) {
+            return res.status(403).json({ message: "شما اشتراک فعال دیجی‌کورس ندارید. لطفاً اشتراک تهیه کنید." });
+        }
+
+        // 2. check product and its allowSubscription status
+        const product = await prisma.product.findUnique({
+            where: { id: parseInt(productId) }
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: "محصول مورد نظر یافت نشد." });
+        }
+
+        if (!product.allowSubscription) {
+            return res.status(403).json({ message: "این محصول شامل پلن دیجی‌کورس نمی‌باشد و باید جداگانه خریداری شود." });
+        }
+
+        res.status(200).json({
+            message: "دسترسی از طریق دیجی‌کورس تایید شد.",
+            fileName: `${product.title}.zip`,
+            downloadUrl: product.fileUrl || `https://storage.your-ecommerce-app.com/digicourse/${product.id}`
+        });
+
+    } catch (error) {
+        console.error("DigiCourse Access Error:", error);
+        res.status(500).json({ message: "خطا در بررسی دسترسی اشتراک." });
+    }
+};
+
+module.exports = { getBuyerDashboard, downloadSecureProduct, accessDigiCourseProduct };
