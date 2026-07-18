@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import RecommendationSection from '../components/RecommendationSection';
 
 export default function BuyerDashboard() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -26,6 +29,27 @@ export default function BuyerDashboard() {
     };
 
     fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) { setRecLoading(false); return; }
+      
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/recommendations`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          setRecommendations(await response.json());
+        }
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    fetchRecommendations();
   }, []);
 
   return (
@@ -132,6 +156,15 @@ export default function BuyerDashboard() {
           </div>
         )}
       </div>
+      {/* Personalized Recommendations */}
+      {!recLoading && recommendations.length > 0 && (
+        <RecommendationSection
+          title="پیشنهادات ویژه برای شما"
+          subtitle="بر اساس خریدهای قبلی و سلیقه کاربران مشابه"
+          products={recommendations}
+          icon="✨"
+        />
+      )}
     </div>
   );
 }
