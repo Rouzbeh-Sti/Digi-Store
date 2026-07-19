@@ -4,11 +4,10 @@ import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import SellerCTA from '../components/SellerCTA';
-import Footer from '../components/Footer'; // Import the new Footer component
+import Footer from '../components/Footer';
 import RecommendationSection from '../components/RecommendationSection';
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [featuredItems, setFeaturedItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [personalRecommendations, setPersonalRecommendations] = useState([]);
@@ -75,7 +74,7 @@ export default function Home() {
       <div className="relative z-10 flex-1">
         <Navbar />
 
-        <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <Hero />
 
         {/* Grid Categories Showcase Section */}
         <section className="max-w-6xl mx-auto px-6 mb-24">
@@ -123,7 +122,7 @@ export default function Home() {
           ) : (
             <div className="text-center py-12 text-gray-400 font-bold text-xs">هیچ محصولی یافت نشد.</div>
           )}
-        </section>
+        </section> 
         {/* Personalized Recommendations for Logged-in Users */}
         {!recLoading && personalRecommendations.length > 0 && (
           <RecommendationSection
@@ -137,7 +136,6 @@ export default function Home() {
         <SellerCTA />
       </div>
 
-      {/* Render the clean enterprise footer component */}
       <Footer />
     </div>
   );
