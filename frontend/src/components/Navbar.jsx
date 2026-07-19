@@ -12,13 +12,19 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchBarOpen, setIsSearchBarOpen] = useState(false);
+  
+  // استیت‌های مربوط به دیجی‌کورس
+  const [plans, setPlans] = useState([]);
+  const [isDigiCourseOpen, setIsDigiCourseOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
   const mobileSearchRef = useRef(null);
+  const digiCourseRef = useRef(null); // رفرنس برای دراپ‌داون دیجی‌کورس
 
-  const { cart, getCartTotal, removeFromCart } = useContext(CartContext);
+  // اضافه کردن addToCart به کانتکست
+  const { cart, getCartTotal, removeFromCart, addToCart } = useContext(CartContext);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -26,6 +32,23 @@ export default function Navbar() {
       setUser(JSON.parse(storedUser));
     }
   }, [location]);
+
+  // فچ کردن پلن‌های دیجی‌کورس از بک‌اند
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subscriptions/plans`);
+        if (res.ok) {
+          const data = await res.json();
+          // فقط پلن‌های فعال را نشان می‌دهیم
+          setPlans(data.filter(plan => plan.isActive));
+        }
+      } catch (err) { 
+        console.error('Error fetching subscription plans:', err); 
+      }
+    };
+    fetchPlans();
+  }, []);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -46,6 +69,19 @@ export default function Navbar() {
     navigate('/');
   };
 
+  // هندلر اضافه کردن پلن به سبد خرید
+  const handleAddPlanToCart = (plan) => {
+    addToCart({
+      id: plan.id,
+      title: `اشتراک دیجی‌کورس - ${plan.title}`,
+      price: plan.price,
+      type: 'SUBSCRIPTION', // مشخص کردن تایپ برای بک‌اند
+      category: 'اشتراک VIP'
+    });
+    setIsDigiCourseOpen(false);
+    navigate('/cart'); // انتقال خودکار به سبد خرید پس از انتخاب پلن
+  };
+
   const isActive = (path) => location.pathname === path;
 
   useEffect(() => {
@@ -55,6 +91,10 @@ export default function Navbar() {
       }
       if (mobileSearchRef.current && !mobileSearchRef.current.contains(event.target)) {
         setIsSearchBarOpen(false);
+      }
+      // بستن دراپ‌داون دیجی‌کورس در صورت کلیک بیرون از آن
+      if (digiCourseRef.current && !digiCourseRef.current.contains(event.target)) {
+        setIsDigiCourseOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -112,6 +152,35 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-6 text-sm font-bold text-gray-500">
             <Link to="/" className={`pb-1 transition-all duration-200 ${isActive('/') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>خانه</Link>
             <Link to="/marketplace" className={`pb-1 transition-all duration-200 ${isActive('/marketplace') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>بازارچه محصولات</Link>
+            
+            {/* دراپ‌داون دیجی‌کورس */}
+            <div className="relative" ref={digiCourseRef}>
+              <button 
+                onClick={() => setIsDigiCourseOpen(!isDigiCourseOpen)} 
+                className="flex items-center gap-1 text-[#6d28d9] hover:text-purple-800 transition-colors cursor-pointer pb-1 font-bold"
+              >
+                <span>خرید دیجی‌کورس</span>
+                <span className="text-[10px]">▼</span>
+              </button>
+              
+              {isDigiCourseOpen && (
+                <div className="absolute right-0 mt-3 w-60 bg-white border border-purple-100 shadow-2xl rounded-2xl p-2 z-50 flex flex-col gap-1">
+                  {plans.length > 0 ? plans.map(plan => (
+                    <button 
+                      key={plan.id} 
+                      onClick={() => handleAddPlanToCart(plan)}
+                      className="text-right p-3 hover:bg-purple-50 rounded-xl transition-colors cursor-pointer"
+                    >
+                      <div className="text-sm font-black text-gray-900">{plan.title}</div>
+                      <div className="text-xs font-bold text-purple-600 mt-1">{plan.price.toLocaleString('fa-IR')} تومان</div>
+                    </button>
+                  )) : (
+                    <div className="p-3 text-xs text-gray-500 text-center font-bold">پلنی یافت نشد</div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {user && user.role === 'SELLER' && (
               <Link to="/seller/dashboard" className={`pb-1 transition-all duration-200 ${isActive('/seller/dashboard') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>پنل فروشندگان</Link>
             )}
@@ -197,8 +266,8 @@ export default function Navbar() {
                 {cart.length === 0 ? (
                   <p className="text-center text-xs text-gray-400 font-bold py-6">سبد خرید خالی است.</p>
                 ) : (
-                  cart.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center p-2 hover:bg-purple-50 rounded-xl transition-colors group/item">
+                  cart.map((item, index) => (
+                    <div key={item.id + index} className="flex justify-between items-center p-2 hover:bg-purple-50 rounded-xl transition-colors group/item">
                       <div className="flex flex-col truncate ml-2">
                         <span className="text-xs font-black text-gray-900 truncate">{item.title}</span>
                         <span className="text-[10px] font-bold text-[#6d28d9] mt-0.5">{item.price.toLocaleString('en-US')} تومان</span>

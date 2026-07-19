@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import AdminProductManagement from '../components/admin/AdminProductManagement';
 import AdminUserManagement from '../components/admin/AdminUserManagement';
 import InspectionModal from '../components/admin/InspectionModal';
+import AdminSubscriptionManagement from '../components/admin/AdminSubscriptionManagement';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('pending');
@@ -103,6 +104,12 @@ export default function AdminDashboard() {
         <div className="flex gap-2 border-b border-gray-200 my-6">
           <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'pending' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>📦 مدیریت کالاها و دوره‌ها</button>
           <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-xs font-black border-b-2 cursor-pointer transition-all duration-200 ${activeTab === 'users' ? 'border-[#6320ee] text-[#6320ee]' : 'text-gray-400'}`}>👥 نظارت کاربری و سطوح دسترسی</button>
+          <button 
+            onClick={() => setActiveTab('subscriptions')}
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black transition-all ${activeTab === 'subscriptions' ? 'bg-[#6320ee] text-white' : 'bg-white text-gray-500 hover:bg-purple-50'}`}
+          >
+            <span>💳</span> پلن‌های دیجی‌کورس
+          </button>
         </div>
 
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs min-h-[400px]">
@@ -115,6 +122,7 @@ export default function AdminDashboard() {
             <div className="animate-in fade-in duration-300">
               {activeTab === 'pending' && <AdminProductManagement products={pendingProducts} onVerify={handleVerify} onInspect={(p) => { setInspectType('product'); setInspectEntity(p); }} />}
               {activeTab === 'users' && <AdminUserManagement users={users} onToggleBan={handleToggleBan} onRoleChange={handleRoleChange} onInspect={(u) => { setInspectType('user'); setInspectEntity(u); }} />}
+              {activeTab === 'subscriptions' && <AdminSubscriptionManagement />}
             </div>
           )}
         </div>

@@ -20,16 +20,16 @@ const handleCheckout = async () => {
     setIsProcessing(true);
 
     try {
-      const productIds = cart.map(item => item.id);
+      // ارسال نوع آیتم به همراه آیدی برای تفکیک محصول از اشتراک در بک‌اند
+      const items = cart.map(item => ({ id: item.id, type: item.type || 'PRODUCT' }));
 
-      // Hit the new request endpoint
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ productIds })
+        body: JSON.stringify({ items }) // تغییر از productIds به items
       });
 
       const data = await response.json();

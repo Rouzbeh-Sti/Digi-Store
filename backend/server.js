@@ -9,19 +9,23 @@ const buyerRouter = require('./routes/buyerRoutes');
 const adminRouter = require('./routes/adminRoutes');
 const userRouter = require('./routes/userRoutes');
 const orderRouter = require('./routes/orderRoutes');
+const subscriptionRouter = require('./routes/subscriptionRoutes');
+const recommendationRouter = require('./routes/recommendationRoutes');
 
 const app = express();
 
-app.use(cors()); 
-app.use(express.json()); 
+app.use(cors());
+app.use(express.json());
 
-app.use('/api/auth', authRouter); 
-app.use('/api/products', productRouter); 
+app.use('/api/auth', authRouter);
+app.use('/api/products', productRouter);
 app.use('/api/seller', sellerRouter);
 app.use('/api/buyer', buyerRouter);
-app.use('/api/admin', adminRouter); 
+app.use('/api/admin', adminRouter);
 app.use('/api/user', userRouter);
 app.use('/api/orders', orderRouter);
+app.use('/api/subscriptions', subscriptionRouter);
+app.use('/api/recommendations', recommendationRouter);
 
 app.get('/api/status', (req, res) => {
     res.json({ message: "System core refactored layout connected! 🚀" });

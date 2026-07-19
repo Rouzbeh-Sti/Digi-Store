@@ -5,11 +5,14 @@ import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import SellerCTA from '../components/SellerCTA';
 import Footer from '../components/Footer'; // Import the new Footer component
+import RecommendationSection from '../components/RecommendationSection';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredItems, setFeaturedItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [personalRecommendations, setPersonalRecommendations] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +31,27 @@ export default function Home() {
     };
 
     fetchLatestProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchPersonalRecommendations = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) { setRecLoading(false); return; }
+      
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/recommendations`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          setPersonalRecommendations(await response.json());
+        }
+      } catch (error) {
+        console.error('Error fetching personal recommendations:', error);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    fetchPersonalRecommendations();
   }, []);
 
   const handleCategoryClick = (categoryName) => {
@@ -100,6 +124,15 @@ export default function Home() {
             <div className="text-center py-12 text-gray-400 font-bold text-xs">هیچ محصولی یافت نشد.</div>
           )}
         </section>
+        {/* Personalized Recommendations for Logged-in Users */}
+        {!recLoading && personalRecommendations.length > 0 && (
+          <RecommendationSection
+            title="پیشنهادات ویژه برای شما"
+            subtitle="بر اساس خریدهای قبلی و سلیقه کاربران مشابه"
+            products={personalRecommendations}
+            icon="✨"
+          />
+        )}
 
         <SellerCTA />
       </div>
