@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 export default function MobileDrawer({ isOpen, onClose, user, isActive }) {
   return createPortal(
     <>
-      {/* Smooth Fade Transition Background Layer Overlay */}
       <div 
         onClick={onClose}
         className={`fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
@@ -14,7 +13,6 @@ export default function MobileDrawer({ isOpen, onClose, user, isActive }) {
         style={{ zIndex: 99998 }}
       />
 
-      {/* Premium Right-Side Slide-In Animated Navigation Drawer */}
       <div 
         className={`fixed top-0 right-0 w-72 bg-white shadow-2xl flex flex-col h-screen transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -41,6 +39,7 @@ export default function MobileDrawer({ isOpen, onClose, user, isActive }) {
           >
             <span className="text-base">🏠</span> صفحه اصلی خانه
           </Link>
+
           <Link 
             to="/marketplace" 
             onClick={onClose}
@@ -48,6 +47,16 @@ export default function MobileDrawer({ isOpen, onClose, user, isActive }) {
           >
             <span className="text-base">🏪</span> بازارچه محصولات
           </Link>
+
+          {/* New Mobile Link for DigiCourse */}
+          <Link 
+            to="/digicourse" 
+            onClick={onClose}
+            className={`flex items-center gap-2 p-4 text-sm font-black rounded-xl transition-all duration-200 ${isActive('/digicourse') ? 'bg-emerald-50 text-emerald-600' : 'text-emerald-500 hover:bg-emerald-50'}`}
+          >
+            <span className="text-base">💎</span> اشتراک ویژه دیجی‌کورس
+          </Link>
+
           {user && user.role === 'SELLER' && (
             <Link 
               to="/seller/dashboard" 

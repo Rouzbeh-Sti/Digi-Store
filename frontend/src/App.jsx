@@ -10,6 +10,7 @@ import Marketplace from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import PaymentResult from './pages/PaymentResult';
+import DigiCourse from './pages/DigiCourse';
 
 // Dashboard & Protected Pages
 import SellerDashboard from './pages/SellerDashboard';
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/payment-result" element={<PaymentResult />} />
+          <Route path="/digicourse" element={<DigiCourse />} />
 
           {/* Protected Routes */}
           <Route path="/settings" element={

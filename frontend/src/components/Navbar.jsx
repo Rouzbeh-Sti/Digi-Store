@@ -13,18 +13,12 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchBarOpen, setIsSearchBarOpen] = useState(false);
   
-  // استیت‌های مربوط به دیجی‌کورس
-  const [plans, setPlans] = useState([]);
-  const [isDigiCourseOpen, setIsDigiCourseOpen] = useState(false);
-
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
   const mobileSearchRef = useRef(null);
-  const digiCourseRef = useRef(null); // رفرنس برای دراپ‌داون دیجی‌کورس
 
-  // اضافه کردن addToCart به کانتکست
-  const { cart, getCartTotal, removeFromCart, addToCart } = useContext(CartContext);
+  const { cart, getCartTotal, removeFromCart } = useContext(CartContext);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -32,23 +26,6 @@ export default function Navbar() {
       setUser(JSON.parse(storedUser));
     }
   }, [location]);
-
-  // فچ کردن پلن‌های دیجی‌کورس از بک‌اند
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subscriptions/plans`);
-        if (res.ok) {
-          const data = await res.json();
-          // فقط پلن‌های فعال را نشان می‌دهیم
-          setPlans(data.filter(plan => plan.isActive));
-        }
-      } catch (err) { 
-        console.error('Error fetching subscription plans:', err); 
-      }
-    };
-    fetchPlans();
-  }, []);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -69,19 +46,6 @@ export default function Navbar() {
     navigate('/');
   };
 
-  // هندلر اضافه کردن پلن به سبد خرید
-  const handleAddPlanToCart = (plan) => {
-    addToCart({
-      id: plan.id,
-      title: `اشتراک دیجی‌کورس - ${plan.title}`,
-      price: plan.price,
-      type: 'SUBSCRIPTION', // مشخص کردن تایپ برای بک‌اند
-      category: 'اشتراک VIP'
-    });
-    setIsDigiCourseOpen(false);
-    navigate('/cart'); // انتقال خودکار به سبد خرید پس از انتخاب پلن
-  };
-
   const isActive = (path) => location.pathname === path;
 
   useEffect(() => {
@@ -91,10 +55,6 @@ export default function Navbar() {
       }
       if (mobileSearchRef.current && !mobileSearchRef.current.contains(event.target)) {
         setIsSearchBarOpen(false);
-      }
-      // بستن دراپ‌داون دیجی‌کورس در صورت کلیک بیرون از آن
-      if (digiCourseRef.current && !digiCourseRef.current.contains(event.target)) {
-        setIsDigiCourseOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -132,7 +92,6 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-purple-100/60 px-4 md:px-6 py-4 shadow-sm">
       <div className="max-w-6xl mx-auto flex justify-between items-center w-full gap-4">
         
-        {/* Right Section: Mobile Menu Trigger Icon Button & Logo */}
         <div className="flex items-center gap-4 lg:gap-8">
           <button 
             onClick={() => setIsMenuOpen(true)}
@@ -148,38 +107,14 @@ export default function Navbar() {
             DigiStore
           </Link>
 
-          {/* Desktop Core Route Links */}
           <nav className="hidden lg:flex items-center gap-6 text-sm font-bold text-gray-500">
             <Link to="/" className={`pb-1 transition-all duration-200 ${isActive('/') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>خانه</Link>
             <Link to="/marketplace" className={`pb-1 transition-all duration-200 ${isActive('/marketplace') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>بازارچه محصولات</Link>
             
-            {/* دراپ‌داون دیجی‌کورس */}
-            <div className="relative" ref={digiCourseRef}>
-              <button 
-                onClick={() => setIsDigiCourseOpen(!isDigiCourseOpen)} 
-                className="flex items-center gap-1 text-[#6d28d9] hover:text-purple-800 transition-colors cursor-pointer pb-1 font-bold"
-              >
-                <span>خرید دیجی‌کورس</span>
-                <span className="text-[10px]">▼</span>
-              </button>
-              
-              {isDigiCourseOpen && (
-                <div className="absolute right-0 mt-3 w-60 bg-white border border-purple-100 shadow-2xl rounded-2xl p-2 z-50 flex flex-col gap-1">
-                  {plans.length > 0 ? plans.map(plan => (
-                    <button 
-                      key={plan.id} 
-                      onClick={() => handleAddPlanToCart(plan)}
-                      className="text-right p-3 hover:bg-purple-50 rounded-xl transition-colors cursor-pointer"
-                    >
-                      <div className="text-sm font-black text-gray-900">{plan.title}</div>
-                      <div className="text-xs font-bold text-purple-600 mt-1">{plan.price.toLocaleString('fa-IR')} تومان</div>
-                    </button>
-                  )) : (
-                    <div className="p-3 text-xs text-gray-500 text-center font-bold">پلنی یافت نشد</div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* New Link Instead of Dropdown */}
+            <Link to="/digicourse" className={`pb-1 transition-all duration-200 flex items-center gap-1.5 ${isActive('/digicourse') ? 'text-emerald-600 border-b-2 border-emerald-500' : 'text-emerald-500 hover:text-emerald-600'}`}>
+              <span>💎</span> خرید دیجی‌کورس
+            </Link>
 
             {user && user.role === 'SELLER' && (
               <Link to="/seller/dashboard" className={`pb-1 transition-all duration-200 ${isActive('/seller/dashboard') ? 'text-[#6d28d9] border-b-2 border-[#6d28d9]' : 'hover:text-[#6d28d9]'}`}>پنل فروشندگان</Link>
@@ -190,7 +125,6 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* Center Section: Desktop Live Search Layout Component */}
         <div className="hidden md:block flex-1 max-w-sm relative" ref={dropdownRef}>
           <div className="relative group">
             <input
@@ -232,7 +166,6 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Left Section: Context Responsive Auth Actions */}
         <div className="flex items-center gap-2 md:gap-4">
           <button 
             onClick={() => setIsSearchBarOpen(!isSearchBarOpen)}
@@ -244,7 +177,6 @@ export default function Navbar() {
             </svg>
           </button>
 
-          {/* Cart Dropdown Module - Now visible on mobile */}
           <div className="relative group">
             <Link to="/cart" className="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-50/50 hover:bg-purple-100 text-[#6d28d9] transition-all relative">
               <span className="text-lg">🛒</span>
@@ -255,7 +187,6 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Hover Dropdown Interface - Hidden on mobile, visible on sm desktop and up */}
             <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible sm:group-hover:opacity-100 sm:group-hover:visible transition-all duration-300 transform origin-top-left z-50 text-right hidden sm:flex flex-col">
               <div className="p-3 border-b border-gray-50 flex justify-between items-center">
                 <span className="text-xs font-black text-gray-900">سبد خرید شما</span>
@@ -294,13 +225,11 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Render Component-Based Modular User Action Trigger Menu */}
           <UserMenu user={user} onLogout={handleLogout} />
         </div>
 
       </div>
 
-      {/* Mobile Popover Overlay Full Width Search Interface */}
       {isSearchBarOpen && (
         <div className="absolute inset-x-0 top-0 bg-white p-4 shadow-md border-b border-purple-100 flex items-center gap-3 z-50 animate-in slide-in-from-top duration-200" ref={mobileSearchRef}>
           <div className="relative flex-1">
@@ -340,7 +269,6 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Render Component-Based Isolated Mobile Drawer Portal */}
       <MobileDrawer 
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)} 
