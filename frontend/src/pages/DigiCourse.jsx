@@ -7,27 +7,47 @@ import { CartContext } from '../context/CartContext';
 export default function DigiCourse() {
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { addToCart } = useContext(CartContext);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  
+  // Extracting cart to check if the item is already added
+  const { addToCart, cart } = useContext(CartContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchPlans = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subscriptions/plans`);
-        if (res.ok) {
-          const data = await res.json();
+        // Fetch all active subscription plans
+        const plansRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subscriptions/plans`);
+        if (plansRes.ok) {
+          const data = await plansRes.json();
           setPlans(data.filter(plan => plan.isActive));
         }
+
+        // Verify if the current user already owns an active subscription
+        const token = localStorage.getItem('token');
+        if (token) {
+          const subRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subscriptions/status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (subRes.ok) {
+            const subData = await subRes.json();
+            setHasSubscription(subData.hasActiveSubscription);
+          }
+        }
       } catch (err) {
-        console.error("Error fetching plans:", err);
+        console.error("Fetch error:", err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchPlans();
+    
+    fetchData();
   }, []);
 
   const handleAddPlanToCart = (plan) => {
+    // Failsafe to prevent adding if the user somehow bypassed the disabled UI
+    if (hasSubscription) return;
+    
     addToCart({
       id: plan.id,
       title: `اشتراک دیجی‌کورس - ${plan.title}`,
@@ -36,6 +56,11 @@ export default function DigiCourse() {
       category: 'اشتراک VIP'
     });
     navigate('/cart');
+  };
+
+  // Helper function to check if the specific plan is already in the cart
+  const isPlanInCart = (planId) => {
+    return cart.some(item => item.id === planId && item.type === 'SUBSCRIPTION');
   };
 
   return (
@@ -61,50 +86,65 @@ export default function DigiCourse() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {plans.map((plan, idx) => (
-              <div 
-                key={plan.id} 
-                className={`bg-white rounded-3xl p-8 border ${idx === 1 ? 'border-emerald-500 shadow-xl shadow-emerald-100/50 scale-105' : 'border-gray-200 shadow-sm'} flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-500`}
-                style={{ animationDelay: `${idx * 150}ms` }}
-              >
-                {idx === 1 && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[9px] font-black px-4 py-1 rounded-b-xl">
-                    پیشنهاد ویژه
-                  </div>
-                )}
-                
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-                
-                <h2 className="text-xl font-black text-gray-900 mb-2 z-10 mt-2">{plan.title}</h2>
-                <p className="text-xs font-bold text-gray-500 mb-8 z-10 h-10">{plan.description}</p>
-                
-                <div className="text-3xl font-black text-emerald-600 mb-8 z-10">
-                  {plan.price.toLocaleString('fa-IR')} <span className="text-sm text-gray-400">تومان</span>
-                </div>
-
-                <ul className="space-y-4 mb-8 text-xs font-bold text-gray-600 z-10">
-                  <li className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-emerald-100 text-emerald-600 flex justify-center items-center rounded-full text-[10px]">✓</span> 
-                    دسترسی کامل به دوره‌های دارای نشان
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-emerald-100 text-emerald-600 flex justify-center items-center rounded-full text-[10px]">✓</span> 
-                    اعتبار {plan.duration === 'MONTHLY' ? '۳۰ روزه' : plan.duration === 'YEARLY' ? '۳۶۵ روزه' : '۹۰ روزه'}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-emerald-100 text-emerald-600 flex justify-center items-center rounded-full text-[10px]">✓</span> 
-                    پشتیبانی اختصاصی و دریافت آپدیت‌ها
-                  </li>
-                </ul>
-
-                <button 
-                  onClick={() => handleAddPlanToCart(plan)}
-                  className={`mt-auto w-full py-4 text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer z-10 ${idx === 1 ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-gray-900 hover:bg-black text-white'}`}
+            {plans.map((plan, idx) => {
+              const inCart = isPlanInCart(plan.id);
+              // Disable the button if the user already owns the sub OR if it's already in the cart
+              const isDisabled = hasSubscription || inCart;
+              
+              return (
+                <div 
+                  key={plan.id} 
+                  className={`bg-white rounded-3xl p-8 border ${idx === 1 ? 'border-emerald-500 shadow-xl shadow-emerald-100/50 scale-105' : 'border-gray-200 shadow-sm'} flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-500`}
+                  style={{ animationDelay: `${idx * 150}ms` }}
                 >
-                  افزودن به سبد خرید
-                </button>
-              </div>
-            ))}
+                  {idx === 1 && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[9px] font-black px-4 py-1 rounded-b-xl">
+                      پیشنهاد ویژه
+                    </div>
+                  )}
+                  
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <h2 className="text-xl font-black text-gray-900 mb-2 z-10 mt-2">{plan.title}</h2>
+                  <p className="text-xs font-bold text-gray-500 mb-8 z-10 h-10">{plan.description}</p>
+                  
+                  <div className="text-3xl font-black text-emerald-600 mb-8 z-10">
+                    {plan.price.toLocaleString('fa-IR')} <span className="text-sm text-gray-400">تومان</span>
+                  </div>
+
+                  <ul className="space-y-4 mb-8 text-xs font-bold text-gray-600 z-10">
+                    <li className="flex items-center gap-2">
+                      <span className="w-5 h-5 bg-emerald-100 text-emerald-600 flex justify-center items-center rounded-full text-[10px]">✓</span> 
+                      دسترسی کامل به دوره‌های دارای نشان
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-5 h-5 bg-emerald-100 text-emerald-600 flex justify-center items-center rounded-full text-[10px]">✓</span> 
+                      اعتبار {plan.duration === 'MONTHLY' ? '۳۰ روزه' : plan.duration === 'YEARLY' ? '۳۶۵ روزه' : '۹۰ روزه'}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-5 h-5 bg-emerald-100 text-emerald-600 flex justify-center items-center rounded-full text-[10px]">✓</span> 
+                      پشتیبانی اختصاصی و دریافت آپدیت‌ها
+                    </li>
+                  </ul>
+
+                  <button 
+                    onClick={() => handleAddPlanToCart(plan)}
+                    disabled={isDisabled}
+                    className={`mt-auto w-full py-4 text-sm font-black rounded-xl transition-all shadow-md z-10 ${
+                      hasSubscription 
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                        : inCart
+                        ? 'bg-amber-100 text-amber-700 cursor-not-allowed'
+                        : idx === 1 
+                          ? 'bg-emerald-500 hover:bg-emerald-600 text-white active:scale-95' 
+                          : 'bg-gray-900 hover:bg-black text-white active:scale-95'
+                    }`}
+                  >
+                    {hasSubscription ? 'شما این اشتراک را دارید' : inCart ? 'در سبد خرید موجود است' : 'افزودن به سبد خرید'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
