@@ -38,11 +38,29 @@ const verifyProduct = async (req, res) => {
     }
 };
 
-// Retrieve all registered platform users for admin controls
+// Retrieve all registered platform users including active subscriptions
 const getAllUsers = async (req, res) => {
     try {
         const users = await prisma.user.findMany({
-            select: { id: true, email: true, fullName: true, role: true, storeName: true, isBanned: true, createdAt: true },
+            select: { 
+                id: true, 
+                email: true, 
+                fullName: true, 
+                role: true, 
+                storeName: true, 
+                isBanned: true, 
+                createdAt: true,
+                // Fetch the active subscription if it exists
+                subscriptions: {
+                    where: { 
+                        isActive: true, 
+                        endDate: { gte: new Date() } 
+                    },
+                    include: { plan: true },
+                    orderBy: { endDate: 'desc' },
+                    take: 1
+                }
+            },
             orderBy: { createdAt: 'desc' }
         });
         res.status(200).json(users);
