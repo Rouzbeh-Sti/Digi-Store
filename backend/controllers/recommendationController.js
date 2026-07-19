@@ -2,24 +2,24 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
- * Improved Hybrid Recommendation Engine for DigiStore
+ * Recommendation Engine v3 - Fixed for Real-World Usage
  * 
- * v2 Changes:
- * 1. COLLABORATIVE FILTERING is now dominant (+5 per co-purchase, was +2)
- * 2. CATEGORY PREFERENCE is contextual - only boosts the user's DOMINANT category
- * 3. POPULARITY is a minor tiebreaker (reduced weights)
- * 4. DIVERSITY BOOST: products in user's dominant interest get extra +2
- * 5. PENALTY: products far from user's interest get -1 (prevents "popular bleed")
+ * Problem with v2: Collaborative filtering only works if OTHER users bought
+ * the EXACT SAME products. New users buy products nobody else bought.
  * 
- * This ensures a user who buys ML products sees ML recommendations,
- * not just the most popular web dev products.
+ * v3 Solution: When product-level co-purchase is empty, fall back to
+ * CATEGORY-LEVEL collaborative filtering:
+ * "Users who bought ML products also bought these OTHER ML products"
+ * 
+ * This is how Amazon/Netflix actually work — they don't need exact 
+ * product matches, just category/interest alignment.
  */
 
 const getRecommendations = async (req, res) => {
     try {
         const userId = req.user.userId;
 
-        // 1. Get user's COMPLETE purchase history with full product data
+        // 1. Get user's purchase history
         const userOrders = await prisma.order.findMany({
             where: { buyerId: userId, status: 'COMPLETED' },
             include: {
@@ -36,25 +36,24 @@ const getRecommendations = async (req, res) => {
 
         const purchasedProductIds = new Set();
         const purchasedCategories = [];
+        const purchasedProductTitles = [];
 
         userOrders.forEach(order => {
             order.items.forEach(item => {
                 if (item.product) {
                     purchasedProductIds.add(item.product.id);
                     purchasedCategories.push(item.product.category);
+                    purchasedProductTitles.push(item.product.title);
                 }
             });
         });
 
-        // ═══════════════════════════════════════════════════════
-        // DETECT USER'S DOMINANT INTEREST
-        // ═══════════════════════════════════════════════════════
+        // Detect dominant category
         const categoryFrequency = {};
         purchasedCategories.forEach(cat => {
             categoryFrequency[cat] = (categoryFrequency[cat] || 0) + 1;
         });
 
-        // Find dominant category (most purchased)
         let dominantCategory = null;
         let maxCount = 0;
         for (const [cat, count] of Object.entries(categoryFrequency)) {
@@ -63,12 +62,10 @@ const getRecommendations = async (req, res) => {
                 dominantCategory = cat;
             }
         }
-
-        // If user has 3+ purchases in one category, it's their clear preference
-        const hasClearPreference = maxCount >= 3;
+        const hasClearPreference = maxCount >= 2;  // Lowered from 3
 
         // ═══════════════════════════════════════════════════════
-        // COLD START: No purchases → return top-rated products
+        // COLD START
         // ═══════════════════════════════════════════════════════
         if (purchasedProductIds.size === 0) {
             const fallback = await prisma.product.findMany({
@@ -98,8 +95,8 @@ const getRecommendations = async (req, res) => {
         }
 
         // ═══════════════════════════════════════════════════════
-        // 2. COLLABORATIVE FILTERING (DOMINANT SIGNAL)
-        // Find users who bought the SAME products, see what ELSE they bought
+        // 2. PRODUCT-LEVEL Collaborative Filtering
+        // Find users who bought the EXACT SAME products
         // ═══════════════════════════════════════════════════════
         const similarUserOrders = await prisma.order.findMany({
             where: {
@@ -121,28 +118,66 @@ const getRecommendations = async (req, res) => {
             }
         });
 
-        // Count co-purchase frequency + track category of co-purchases
         const coPurchaseScores = new Map();
-        const coPurchaseCategoryBoost = new Map();
-
         similarUserOrders.forEach(order => {
             order.items.forEach(item => {
                 if (item.product && !purchasedProductIds.has(item.product.id)) {
-                    const pid = item.product.id;
-                    coPurchaseScores.set(pid, (coPurchaseScores.get(pid) || 0) + 1);
-
-                    // Track which category these co-purchases belong to
-                    const cat = item.product.category;
-                    if (!coPurchaseCategoryBoost.has(cat)) {
-                        coPurchaseCategoryBoost.set(cat, new Set());
-                    }
-                    coPurchaseCategoryBoost.get(cat).add(pid);
+                    coPurchaseScores.set(
+                        item.product.id,
+                        (coPurchaseScores.get(item.product.id) || 0) + 1
+                    );
                 }
             });
         });
 
         // ═══════════════════════════════════════════════════════
-        // 3. GET ALL ELIGIBLE PRODUCTS
+        // 3. CATEGORY-LEVEL Collaborative Filtering (NEW)
+        // If product-level is weak, find users who bought SAME CATEGORY products
+        // "ML buyers also bought these other ML products"
+        // ═══════════════════════════════════════════════════════
+        const categoryCoPurchaseScores = new Map();
+
+        if (coPurchaseScores.size < 5 && hasClearPreference) {
+            // Product-level CF is weak → use category-level
+            const categoryBuyers = await prisma.order.findMany({
+                where: {
+                    status: 'COMPLETED',
+                    buyerId: { not: userId },
+                    items: {
+                        some: {
+                            product: {
+                                category: dominantCategory
+                            }
+                        }
+                    }
+                },
+                include: {
+                    items: {
+                        where: {
+                            productId: { not: null },
+                            product: { category: dominantCategory }
+                        },
+                        include: {
+                            product: { select: { id: true, category: true } }
+                        }
+                    }
+                }
+            });
+
+            categoryBuyers.forEach(order => {
+                order.items.forEach(item => {
+                    if (item.product && !purchasedProductIds.has(item.product.id)) {
+                        categoryCoPurchaseScores.set(
+                            item.product.id,
+                            (categoryCoPurchaseScores.get(item.product.id) || 0) + 1
+                        );
+                    }
+                });
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // 4. GET ALL ELIGIBLE PRODUCTS
         // ═══════════════════════════════════════════════════════
         const allProducts = await prisma.product.findMany({
             where: {
@@ -160,55 +195,65 @@ const getRecommendations = async (req, res) => {
         });
 
         // ═══════════════════════════════════════════════════════
-        // 4. SMART SCORING ENGINE
+        // 5. SMART SCORING ENGINE v3
         // ═══════════════════════════════════════════════════════
         const scoredProducts = allProducts.map(product => {
             let score = 0;
             const reasons = [];
 
-            // ── A. COLLABORATIVE FILTERING (Highest Weight) ──
+            // ── A. PRODUCT-LEVEL Collaborative (Strongest) ──
             const coCount = coPurchaseScores.get(product.id) || 0;
             if (coCount > 0) {
-                // +5 per co-purchase occurrence (was +2)
-                score += coCount * 5;
-
-                if (coCount >= 3) {
-                    reasons.push('بسیاری از خریداران مشابه این را انتخاب کردند');
+                score += coCount * 6;
+                if (coCount >= 2) {
+                    reasons.push('خریدارانی مثل شما این را هم خریدند');
                 } else {
-                    reasons.push('خریداران مشابه این را هم خریدند');
+                    reasons.push('خریداران مشابه این را انتخاب کردند');
                 }
             }
 
-            // ── B. DOMINANT CATEGORY BOOST ──
-            // Only boost if this matches user's CLEAR preference
+            // ── B. CATEGORY-LEVEL Collaborative (NEW - Strong) ──
+            const catCoCount = categoryCoPurchaseScores.get(product.id) || 0;
+            if (catCoCount > 0 && coCount === 0) {
+                // Only apply if no product-level match (avoid double counting)
+                score += Math.min(catCoCount * 3, 9);
+                if (catCoCount >= 3) {
+                    reasons.push('علاقه‌مندان به این حوزه این را هم خریدند');
+                } else {
+                    reasons.push('در میان علاقه‌مندان این دسته محبوب است');
+                }
+            }
+
+            // ── C. DOMINANT CATEGORY BOOST ──
             if (hasClearPreference && product.category === dominantCategory) {
-                score += 3;
-                reasons.push('هم‌راستا با علاقه‌مندی‌های شما');
+                score += 4;
+                if (reasons.length === 0) {
+                    reasons.push('هم‌راستا با علاقه‌مندی‌های شما');
+                }
             } else if (purchasedCategories.includes(product.category)) {
-                // User bought some in this category but it's not dominant
                 score += 1;
             }
 
-            // ── C. INTEREST ALIGNMENT PENALTY ──
-            // If user has clear preference (e.g., ML), penalize unrelated categories
-            if (hasClearPreference && product.category !== dominantCategory) {
-                // Small penalty to prevent "popular product bleed"
-                score -= 1;
+            // ── D. SUB-CATEGORY SIMILARITY (NEW) ──
+            // Check if product title shares keywords with purchased products
+            const productTitleLower = product.title.toLowerCase();
+            let keywordMatches = 0;
+            purchasedProductTitles.forEach(title => {
+                const words = title.toLowerCase().split(/\s+/);
+                words.forEach(word => {
+                    if (word.length > 3 && productTitleLower.includes(word)) {
+                        keywordMatches++;
+                    }
+                });
+            });
+            if (keywordMatches > 0) {
+                score += Math.min(keywordMatches * 0.5, 2);
             }
 
-            // ── D. POPULARITY (Minor Tiebreaker) ──
+            // ── E. POPULARITY (Minor tiebreaker) ──
             if (product.averageRating >= 4.5 && product.reviewCount >= 10) {
-                score += 1;
-                if (reasons.length === 0) reasons.push('امتیاز عالی و محبوب');
-            } else if (product.averageRating >= 4.0 && product.reviewCount >= 5) {
                 score += 0.5;
-                if (reasons.length === 0) reasons.push('امتیاز بالا');
-            }
-
-            // ── E. FRESHNESS BOOST ──
-            // Slightly boost products with some reviews but not oversaturated
-            if (product.reviewCount >= 3 && product.reviewCount <= 30) {
-                score += 0.5;
+                if (reasons.length === 0) reasons.push('امتیاز عالی');
             }
 
             return {
@@ -219,16 +264,13 @@ const getRecommendations = async (req, res) => {
             };
         });
 
-        // 5. Sort by score DESC, then by co-purchase count DESC, then rating DESC
+        // 6. Sort by score DESC
         scoredProducts.sort((a, b) => {
             if (b.score !== a.score) return b.score - a.score;
-            const coA = coPurchaseScores.get(a.id) || 0;
-            const coB = coPurchaseScores.get(b.id) || 0;
-            if (coB !== coA) return coB - coA;
             return b.averageRating - a.averageRating;
         });
 
-        // 6. Return top 8
+        // 7. Return top 8
         const recommendations = scoredProducts.slice(0, 8).map(({ _count, score, ...product }) => product);
 
         res.status(200).json(recommendations);
@@ -240,12 +282,20 @@ const getRecommendations = async (req, res) => {
 
 /**
  * Product-level "Customers who bought this also bought..."
- * Public endpoint for product detail pages
  */
 const getProductRecommendations = async (req, res) => {
     try {
         const { productId } = req.params;
         const parsedId = parseInt(productId);
+
+        const product = await prisma.product.findUnique({
+            where: { id: parsedId },
+            select: { category: true, title: true }
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found." });
+        }
 
         // 1. Find users who bought this product
         const buyers = await prisma.order.findMany({
@@ -263,10 +313,8 @@ const getProductRecommendations = async (req, res) => {
             }
         });
 
-        // 2. Count co-purchases + track category distribution
+        // 2. Count co-purchases
         const coPurchaseCount = new Map();
-        const categoryCoPurchaseCount = {};
-
         buyers.forEach(order => {
             order.items.forEach(item => {
                 if (item.productId) {
@@ -274,34 +322,26 @@ const getProductRecommendations = async (req, res) => {
                         item.productId,
                         (coPurchaseCount.get(item.productId) || 0) + 1
                     );
-                    const cat = item.product.category;
-                    categoryCoPurchaseCount[cat] = (categoryCoPurchaseCount[cat] || 0) + 1;
                 }
             });
         });
 
-        // Find dominant co-purchase category
-        let dominantCoCategory = null;
-        let maxCoCount = 0;
-        for (const [cat, count] of Object.entries(categoryCoPurchaseCount)) {
-            if (count > maxCoCount) {
-                maxCoCount = count;
-                dominantCoCategory = cat;
-            }
-        }
-
-        const recommendedIds = Array.from(coPurchaseCount.entries())
+        // 3. If few co-purchases, add category-level recommendations
+        let recommendedIds = Array.from(coPurchaseCount.entries())
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 8)
+            .slice(0, 6)
             .map(([id]) => id);
 
-        let recommendations = [];
+        // 4. Fallback: same category products ordered by popularity
+        if (recommendedIds.length < 4) {
+            const existingIds = new Set(recommendedIds);
+            existingIds.add(parsedId);
 
-        if (recommendedIds.length > 0) {
-            recommendations = await prisma.product.findMany({
+            const fallback = await prisma.product.findMany({
                 where: {
-                    id: { in: recommendedIds },
-                    status: 'APPROVED'
+                    status: 'APPROVED',
+                    category: product.category,
+                    id: { notIn: Array.from(existingIds) }
                 },
                 include: {
                     seller: { select: { fullName: true, storeName: true } },
@@ -310,78 +350,60 @@ const getProductRecommendations = async (req, res) => {
                             orderItems: { where: { order: { status: 'COMPLETED' } } }
                         }
                     }
+                },
+                orderBy: [
+                    { averageRating: 'desc' },
+                    { reviewCount: 'desc' }
+                ],
+                take: 6 - recommendedIds.length
+            });
+
+            recommendedIds = [...recommendedIds, ...fallback.map(f => f.id)];
+        }
+
+        if (recommendedIds.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // 5. Fetch full product data
+        const recommendations = await prisma.product.findMany({
+            where: {
+                id: { in: recommendedIds },
+                status: 'APPROVED'
+            },
+            include: {
+                seller: { select: { fullName: true, storeName: true } },
+                _count: {
+                    select: {
+                        orderItems: { where: { order: { status: 'COMPLETED' } } }
+                    }
                 }
-            });
-        }
-
-        // 3. FALLBACK: Same category products (prioritize same category as source product)
-        if (recommendations.length < 4) {
-            const sourceProduct = await prisma.product.findUnique({
-                where: { id: parsedId },
-                select: { category: true }
-            });
-
-            if (sourceProduct) {
-                const existingIds = new Set(recommendations.map(r => r.id));
-                existingIds.add(parsedId);
-
-                // First try: same category as dominant co-purchase category
-                const fallbackCat = dominantCoCategory || sourceProduct.category;
-
-                const fallback = await prisma.product.findMany({
-                    where: {
-                        status: 'APPROVED',
-                        category: fallbackCat,
-                        id: { notIn: Array.from(existingIds) }
-                    },
-                    include: {
-                        seller: { select: { fullName: true, storeName: true } },
-                        _count: {
-                            select: {
-                                orderItems: { where: { order: { status: 'COMPLETED' } } }
-                            }
-                        }
-                    },
-                    orderBy: [
-                        { averageRating: 'desc' },
-                        { reviewCount: 'desc' }
-                    ],
-                    take: 6 - recommendations.length
-                });
-
-                recommendations = [...recommendations, ...fallback];
             }
-        }
+        });
 
-        // 4. Score and sort
-        const result = recommendations.map(({ _count, ...product }) => {
-            const coCount = coPurchaseCount.get(product.id) || 0;
-            let reason = 'خریداران این محصول، این‌ها را هم خریدند';
-
-            if (coCount >= 3) {
-                reason = 'محبوب در میان خریداران این کالا';
-            } else if (coCount === 0) {
-                reason = 'هم‌دسته و مرتبط';
-            }
+        // 6. Sort and format
+        const result = recommendations.map(({ _count, ...p }) => {
+            const coCount = coPurchaseCount.get(p.id) || 0;
+            let reason = 'هم‌دسته و مرتبط';
+            if (coCount >= 2) reason = 'بسیاری از خریداران این کالا، این را هم خریدند';
+            else if (coCount === 1) reason = 'خریداران این محصول، این را هم خریدند';
 
             return {
-                ...product,
+                ...p,
                 purchaseCount: _count.orderItems,
-                recommendationReason: reason,
-                _coCount: coCount
+                recommendationReason: reason
             };
         });
 
-        // Sort: co-purchased first, then by rating
+        // Sort: co-purchased first
         result.sort((a, b) => {
-            if (b._coCount !== a._coCount) return b._coCount - a._coCount;
+            const coA = coPurchaseCount.get(a.id) || 0;
+            const coB = coPurchaseCount.get(b.id) || 0;
+            if (coB !== coA) return coB - coA;
             return b.averageRating - a.averageRating;
         });
 
-        // Remove internal _coCount field
-        const cleanResult = result.map(({ _coCount, ...rest }) => rest);
-
-        res.status(200).json(cleanResult);
+        res.status(200).json(result);
     } catch (error) {
         console.error("Product Recommendation Error:", error);
         res.status(500).json({ message: "خطا در دریافت پیشنهادات محصول." });

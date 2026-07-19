@@ -3,20 +3,16 @@ const crypto = require('crypto');
 const prisma = new PrismaClient();
 
 /**
- * Order Seeder for Recommendation System Testing
+ * Improved Order Seeder for Recommendation Testing
  * 
- * Creates realistic purchase patterns across all buyers to test:
- * 1. Collaborative filtering (users who bought X also bought Y)
- * 2. Category-based recommendations
- * 3. Popular product boosting
+ * KEY PRINCIPLE: Every product that appears in recommendations
+ * must be bought by AT LEAST 2 users. Otherwise collaborative filtering
+ * has no signal to work with.
  * 
- * Purchase Patterns Designed:
- * - buyer1 (Mahan): Web dev enthusiast → buys React, Next.js, Node.js, TypeScript courses + related books
- * - buyer2 (Erfan): Mobile dev focus → Flutter, React Native, Swift + mobile design books
- * - buyer3 (Rouzbeh): Data Science → Python ML, Deep Learning, Data Viz + stats books
- * - Mixed patterns to create clear co-purchase signals
- * 
- * Run: node prisma/order-seed.js
+ * Strategy:
+ * 1. Define "anchor products" per category (popular items bought by many)
+ * 2. Each buyer buys anchor products + their specialty products
+ * 3. This creates strong co-purchase signals across ALL categories
  */
 
 function generateLicenseKey(title) {
@@ -26,31 +22,27 @@ function generateLicenseKey(title) {
 }
 
 async function seedOrders() {
-    console.log("🛒 Starting order seed for recommendation testing...");
+    console.log("🛒 Starting IMPROVED order seed for recommendation testing...");
 
-    // Get buyers
     const buyer1 = await prisma.user.findUnique({ where: { email: "buyer1@digistore.com" } });
     const buyer2 = await prisma.user.findUnique({ where: { email: "buyer2@digistore.com" } });
     const buyer3 = await prisma.user.findUnique({ where: { email: "buyer3@digistore.com" } });
 
     if (!buyer1 || !buyer2 || !buyer3) {
-        console.error("❌ Please run the main seed.js first to create buyers.");
+        console.error("❌ Run main seed.js first.");
         process.exit(1);
     }
 
-    // Get products by title for easy reference
     const getProduct = async (title) => {
         return await prisma.product.findFirst({ where: { title } });
     };
 
-    // Helper to create a completed order with license
     const createOrder = async (buyerId, productTitles, paymentMethod = 'ZARINPAL') => {
         const products = [];
         for (const title of productTitles) {
             const p = await getProduct(title);
             if (p) products.push(p);
         }
-
         if (products.length === 0) return;
 
         const totalAmount = products.reduce((sum, p) => sum + p.price, 0);
@@ -70,7 +62,6 @@ async function seedOrders() {
             include: { items: true }
         });
 
-        // Create transaction
         await prisma.transaction.create({
             data: {
                 orderId: order.id,
@@ -80,7 +71,6 @@ async function seedOrders() {
             }
         });
 
-        // Create licenses for non-Course products
         for (const item of order.items) {
             const product = products.find(p => p.id === item.productId);
             if (product && product.category !== 'Course') {
@@ -98,127 +88,159 @@ async function seedOrders() {
         return order;
     };
 
-    // ═══════════════════════════════════════════════════════
-    // BUYER 1 (Mahan) - Web Development Enthusiast
-    // Pattern: Frontend courses + backend + related books + tools
-    // ═══════════════════════════════════════════════════════
-    console.log("  📦 Creating orders for Buyer 1 (Web Dev cluster)...");
+    // ═══════════════════════════════════════════════════════════════════════
+    // ANCHOR PRODUCTS: Bought by ALL 3 buyers (creates universal signals)
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log("  🔗 Creating ANCHOR purchases (bought by all 3 users)...");
 
-    await createOrder(buyer1.id, ['React', 'Next.js', 'TypeScript']);
-    await createOrder(buyer1.id, ['Node.js', 'Express.js']);
-    await createOrder(buyer1.id, ['Clean Code', 'Design Patterns']);
-    await createOrder(buyer1.id, ['JetBrains All Products Pack']);
-    await createOrder(buyer1.id, ['Vue.js', 'GraphQL']);
-    await createOrder(buyer1.id, ['The Pragmatic Programmer']);
-    await createOrder(buyer1.id, ['Docker & Kubernetes', 'CI/CD Pipelines']);
-    await createOrder(buyer1.id, ['VS Code Pro (GitHub Copilot)']);
+    // These create the backbone of collaborative filtering
+    const anchorCourses = ['React', 'TypeScript'];
+    const anchorBooks = ['Clean Code'];
+    const anchorLicenses = ['JetBrains All Products Pack'];
 
-    // ═══════════════════════════════════════════════════════
-    // BUYER 2 (Erfan) - Mobile Development Focus
-    // Pattern: Mobile courses + cross-platform + design tools
-    // ═══════════════════════════════════════════════════════
-    console.log("  📦 Creating orders for Buyer 2 (Mobile Dev cluster)...");
+    for (const title of anchorCourses) {
+        await createOrder(buyer1.id, [title]);
+        await createOrder(buyer2.id, [title]);
+        await createOrder(buyer3.id, [title]);
+    }
+    for (const title of anchorBooks) {
+        await createOrder(buyer1.id, [title]);
+        await createOrder(buyer2.id, [title]);
+        await createOrder(buyer3.id, [title]);
+    }
+    for (const title of anchorLicenses) {
+        await createOrder(buyer1.id, [title]);
+        await createOrder(buyer2.id, [title]);
+        await createOrder(buyer3.id, [title]);
+    }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // CATEGORY ANCHORS: Bought by 2 users per category
+    // This ensures every category has co-purchase signals
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log("  🔗 Creating CATEGORY ANCHOR purchases...");
+
+    // Web Dev anchors (buyer1 + buyer2)
+    await createOrder(buyer1.id, ['Next.js', 'Node.js']);
+    await createOrder(buyer2.id, ['Next.js', 'Vue.js']);
+    await createOrder(buyer1.id, ['GraphQL', 'REST API Design']);
+    await createOrder(buyer2.id, ['GraphQL']);
+
+    // Mobile anchors (buyer2 + buyer3)
     await createOrder(buyer2.id, ['Flutter', 'React Native']);
-    await createOrder(buyer2.id, ['iOS Development', 'Android Development']);
-    await createOrder(buyer2.id, ['Cross-platform Architecture']);
-    await createOrder(buyer2.id, ['Figma Professional']);
-    await createOrder(buyer2.id, ['Swift UI', 'Kotlin Multiplatform']);
-    await createOrder(buyer2.id, ['Adobe Creative Cloud']);
-    await createOrder(buyer2.id, ['Mobile UX Design']);
-    await createOrder(buyer2.id, ['Sketch License']);
+    await createOrder(buyer3.id, ['Flutter', 'Swift UI']);
+    await createOrder(buyer2.id, ['iOS Development']);
+    await createOrder(buyer3.id, ['iOS Development', 'Android Development']);
 
-    // ═══════════════════════════════════════════════════════
-    // BUYER 3 (Rouzbeh) - Data Science & AI
-    // Pattern: ML courses + Python + statistics + cloud
-    // ═══════════════════════════════════════════════════════
-    console.log("  📦 Creating orders for Buyer 3 (Data Science cluster)...");
-
+    // Data Science anchors (buyer1 + buyer3)
+    await createOrder(buyer1.id, ['Python for Data Science']);
     await createOrder(buyer3.id, ['Python for Data Science', 'Machine Learning Basics']);
-    await createOrder(buyer3.id, ['Deep Learning with PyTorch', 'TensorFlow Mastery']);
-    await createOrder(buyer3.id, ['Data Visualization', 'Statistical Analysis']);
-    await createOrder(buyer3.id, ['AWS Solutions Architect']);
-    await createOrder(buyer3.id, ['NLP with Python', 'Computer Vision']);
-    await createOrder(buyer3.id, ['Introduction to Algorithms']);
-    await createOrder(buyer3.id, ['Big Data with Spark', 'MLOps']);
-    await createOrder(buyer3.id, ['PyCharm Professional']);
+    await createOrder(buyer1.id, ['Data Visualization']);
+    await createOrder(buyer3.id, ['Data Visualization', 'Deep Learning with PyTorch']);
 
-    // ═══════════════════════════════════════════════════════
-    // OVERLAPPING PURCHASES (for collaborative filtering)
-    // These create "users who bought X also bought Y" signals
-    // ═══════════════════════════════════════════════════════
-    console.log("  📦 Creating overlapping purchase patterns...");
+    // Book anchors (buyer1 + buyer2 + buyer3 mixed)
+    await createOrder(buyer1.id, ['Design Patterns']);
+    await createOrder(buyer2.id, ['Design Patterns', 'The Pragmatic Programmer']);
+    await createOrder(buyer3.id, ['The Pragmatic Programmer', 'Introduction to Algorithms']);
+    await createOrder(buyer1.id, ['Refactoring']);
+    await createOrder(buyer3.id, ['Refactoring']);
 
-    // Web dev buyers also buy: buyer1 + new simulated pattern
-    await createOrder(buyer1.id, ['JavaScript Advanced', 'ES6+ Features', 'REST API Design']);
+    // License anchors
+    await createOrder(buyer1.id, ['VS Code Pro (GitHub Copilot)']);
+    await createOrder(buyer2.id, ['VS Code Pro (GitHub Copilot)', 'Figma Professional']);
+    await createOrder(buyer1.id, ['Docker Desktop Pro']);
+    await createOrder(buyer3.id, ['Docker Desktop Pro', 'PyCharm Professional']);
 
-    // Another user buys React → should see Next.js, Vue.js recommended
-    // (buyer1 already bought React+Next.js, so we create more React buyers)
-    // We use buyer2 and buyer3 to buy some web dev stuff too
-    await createOrder(buyer2.id, ['React', 'Node.js']);  // Mobile dev also learns web
-    await createOrder(buyer3.id, ['React', 'TypeScript']); // Data scientist learns frontend
-
-    // DevOps overlap
+    // ═══════════════════════════════════════════════════════════════════════
+    // SPECIALTY CLUSTERS: Each buyer's unique interests
+    // These create the "personalized" feel while anchors provide overlap
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log("  👤 Creating BUYER 1 specialty (Web Dev + DevOps)...");
+    await createOrder(buyer1.id, ['Express.js', 'NestJS']);
+    await createOrder(buyer1.id, ['JavaScript Advanced', 'ES6+ Features']);
+    await createOrder(buyer1.id, ['Docker & Kubernetes', 'CI/CD Pipelines']);
     await createOrder(buyer1.id, ['Terraform', 'Infrastructure as Code']);
-    await createOrder(buyer3.id, ['Docker & Kubernetes', 'Terraform']);
-
-    // Book lovers overlap
-    await createOrder(buyer1.id, ['Refactoring', 'Code Complete']);
-    await createOrder(buyer2.id, ['Clean Code', 'The Clean Coder']);
-    await createOrder(buyer3.id, ['Clean Code', 'Design Patterns']);
-
-    // Tool overlap
+    await createOrder(buyer1.id, ['AWS Solutions Architect']);
+    await createOrder(buyer1.id, ['WebStorm License', 'DataGrip License']);
     await createOrder(buyer1.id, ['GitHub Actions', 'Postman Team']);
-    await createOrder(buyer2.id, ['Postman Team', 'Notion Team']);
-    await createOrder(buyer3.id, ['Notion Team', 'Obsidian Sync']);
+    await createOrder(buyer1.id, ['Code Complete', 'Working Effectively with Legacy Code']);
+    await createOrder(buyer1.id, ['Head First Design Patterns']);
 
-    // ═══════════════════════════════════════════════════════
-    // POPULAR PRODUCTS (bought by multiple users)
-    // These should get boosted in recommendations
-    // ═══════════════════════════════════════════════════════
-    console.log("  📦 Creating popular product signals...");
-
-    // React is popular - all 3 buyers have it or related
-    await createOrder(buyer1.id, ['React']);
-    await createOrder(buyer2.id, ['React']);
-    await createOrder(buyer3.id, ['React']);
-
-    // Clean Code is popular
-    await createOrder(buyer1.id, ['Clean Code']);
-    await createOrder(buyer2.id, ['Clean Code']);
-    await createOrder(buyer3.id, ['Clean Code']);
-
-    // Docker popular
-    await createOrder(buyer1.id, ['Docker & Kubernetes']);
-    await createOrder(buyer3.id, ['Docker & Kubernetes']);
-
-    // ═══════════════════════════════════════════════════════
-    // CATEGORY CROSSOVER (for content-based testing)
-    // ═══════════════════════════════════════════════════════
-    console.log("  📦 Creating category crossover patterns...");
-
-    // Web dev buyer buys a license
-    await createOrder(buyer1.id, ['WebStorm License']);
-    await createOrder(buyer1.id, ['DataGrip License']);
-
-    // Mobile dev buyer buys books
-    await createOrder(buyer2.id, ['Head First Design Patterns']);
+    console.log("  👤 Creating BUYER 2 specialty (Mobile + Design)...");
+    await createOrder(buyer2.id, ['Kotlin Multiplatform', 'Cross-platform Architecture']);
+    await createOrder(buyer2.id, ['Mobile UX Design', 'App Store Optimization']);
+    await createOrder(buyer2.id, ['Adobe Creative Cloud', 'Sketch License']);
+    await createOrder(buyer2.id, ['Adobe Photoshop', 'Adobe Illustrator']);
+    await createOrder(buyer2.id, ['Canva Pro', 'InVision Studio']);
+    await createOrder(buyer2.id, ['Notion Team', 'Slack Pro']);
     await createOrder(buyer2.id, ['Software Architecture in Practice']);
+    await createOrder(buyer2.id, ['The Clean Coder']);
 
-    // Data scientist buys tools
-    await createOrder(buyer3.id, ['Jupyter-related tools', 'TablePlus License']);
+    console.log("  👤 Creating BUYER 3 specialty (Data Science + AI)...");
+    await createOrder(buyer3.id, ['TensorFlow Mastery', 'NLP with Python']);
+    await createOrder(buyer3.id, ['Computer Vision', 'Time Series Analysis']);
+    await createOrder(buyer3.id, ['MLOps', 'Big Data with Spark']);
+    await createOrder(buyer3.id, ['Statistical Analysis', 'Feature Engineering']);
+    await createOrder(buyer3.id, ['Model Deployment', 'A/B Testing']);
+    await createOrder(buyer3.id, ['TablePlus License', 'Notion Team']);
+    await createOrder(buyer3.id, ['Reinforcement Learning']);
+    await createOrder(buyer3.id, ['Domain-Driven Design']);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CROSS-CATEGORY DISCOVERY purchases
+    // Users sometimes buy outside their main interest — creates variety
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log("  🌉 Creating CROSS-CATEGORY discovery purchases...");
+
+    // Web dev buyer discovers data science
+    await createOrder(buyer1.id, ['Python for Data Science']);  // Already anchor
+    await createOrder(buyer1.id, ['Machine Learning Basics']);
+
+    // Mobile buyer discovers web dev
+    await createOrder(buyer2.id, ['React']);  // Already anchor
+    await createOrder(buyer2.id, ['Node.js']);
+
+    // Data science buyer discovers web dev
+    await createOrder(buyer3.id, ['React']);  // Already anchor
+    await createOrder(buyer3.id, ['TypeScript']);  // Already anchor
+    await createOrder(buyer3.id, ['Next.js']);
+
+    // Book crossovers
+    await createOrder(buyer1.id, ['Introduction to Algorithms']);
+    await createOrder(buyer2.id, ['Clean Code']);  // Already anchor
+    await createOrder(buyer2.id, ['Refactoring']);  // Already anchor
+    await createOrder(buyer3.id, ['Design Patterns']);  // Already anchor
 
     console.log("✅ Order seed complete!");
-    console.log(`📊 Total orders created: ${await prisma.order.count()}`);
-    console.log(`📊 Total licenses created: ${await prisma.license.count()}`);
-    console.log("\n🧪 Test the recommendation system:");
-    console.log("   1. Login as buyer1@digistore.com (password: password123)");
-    console.log("   2. Check Buyer Dashboard for 'پیشنهادات ویژه برای شما'");
-    console.log("   3. Visit a product page for 'خریداران این محصول، این‌ها را هم خریدند'");
-    console.log("\n🔍 Expected recommendations:");
-    console.log("   - buyer1 (bought React, Next.js) → should see Vue.js, Angular, Node.js");
-    console.log("   - buyer2 (bought Flutter, React Native) → should see Swift UI, Kotlin Multiplatform");
-    console.log("   - buyer3 (bought Python DS, ML) → should see Deep Learning, NLP, Data Viz");
+    console.log(`📊 Total orders: ${await prisma.order.count()}`);
+    console.log(`📊 Total licenses: ${await prisma.license.count()}`);
+
+    // Verify co-purchase signals
+    console.log("\n📈 Co-purchase signal verification:");
+    const verifyCoPurchase = async (title) => {
+        const product = await getProduct(title);
+        if (!product) return;
+        const buyers = await prisma.order.count({
+            where: {
+                status: 'COMPLETED',
+                items: { some: { productId: product.id } }
+            }
+        });
+        console.log(`   ${title}: ${buyers} buyer(s)`);
+    };
+
+    await verifyCoPurchase('React');
+    await verifyCoPurchase('TypeScript');
+    await verifyCoPurchase('Clean Code');
+    await verifyCoPurchase('Python for Data Science');
+    await verifyCoPurchase('Flutter');
+    await verifyCoPurchase('Machine Learning Basics');
+
+    console.log("\n🧪 Test commands:");
+    console.log("   1. Login as buyer1@digistore.com → Dashboard → should see web dev + some ML");
+    console.log("   2. Login as buyer3@digistore.com → Dashboard → should see ML/AI dominant");
+    console.log("   3. Register NEW user → buy React + TypeScript → should see Next.js, Node.js, Vue.js");
+    console.log("   4. NEW user → buy Python DS + ML Basics → should see Deep Learning, TensorFlow, NLP");
 }
 
 if (require.main === module) {
@@ -233,4 +255,3 @@ if (require.main === module) {
 }
 
 module.exports = { seedOrders };
-
