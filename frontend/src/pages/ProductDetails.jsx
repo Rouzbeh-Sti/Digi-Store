@@ -7,21 +7,23 @@ import RecommendationSection from '../components/RecommendationSection';
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext);
+  
+  // Extracting 'cart' alongside 'addToCart' to check existing items
+  const { addToCart, cart } = useContext(CartContext);
 
-  // States
+  // Core data states
   const [product, setProduct] = useState(null);
   const [hasSubscription, setHasSubscription] = useState(false);
-  const [isPurchased, setIsPurchased] = useState(false); // بررسی مالکیت محصول
+  const [isPurchased, setIsPurchased] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Review States
+  // Review form states
   const [reviews, setReviews] = useState([]);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
 
-  // Recommendation States
+  // Recommendation states
   const [productRecommendations, setProductRecommendations] = useState([]);
   const [recLoading, setRecLoading] = useState(true);
 
@@ -35,18 +37,17 @@ export default function ProductDetails() {
   useEffect(() => {
     const fetchProductAndUserStatus = async () => {
       try {
-        // ۱. دریافت اطلاعات اصلی محصول
+        // 1. Fetch main product details
         const prodRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}`);
         if (prodRes.ok) setProduct(await prodRes.json());
 
-        // ۲. دریافت کامنت‌های محصول (عمومی)
+        // 2. Fetch public reviews list
         const reviewsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}/reviews`);
         if (reviewsRes.ok) setReviews(await reviewsRes.json());
 
-        // ۳. در صورت لاگین بودن، بررسی اشتراک و خریدهای قبلی
+        // 3. If authenticated, check subscription status and purchase history
         const token = localStorage.getItem('token');
         if (token) {
-          // وضعیت اشتراک
           const subRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subscriptions/status`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -55,13 +56,11 @@ export default function ProductDetails() {
             setHasSubscription(subData.hasActiveSubscription);
           }
 
-          // وضعیت خریدهای قبلی
           const ordersRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/my-orders`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (ordersRes.ok) {
             const orders = await ordersRes.json();
-            // بررسی اینکه آیا این productId در آیتم‌های پرداخت‌شده کاربر هست یا نه
             const ownsProduct = orders.some(o => 
               o.status === 'COMPLETED' && o.items.some(i => i.productId === parseInt(id))
             );
@@ -92,6 +91,9 @@ export default function ProductDetails() {
     fetchProductRecommendations();
   }, [id]);
 
+  // Check if the current product is already in the cart
+  const inCart = product ? cart.some(item => item.id === product.id && item.type === 'PRODUCT') : false;
+
   const handleClaimWithSubscription = async () => {
     setIsProcessing(true);
     try {
@@ -111,7 +113,7 @@ export default function ProductDetails() {
 
       if (res.ok) {
         showToast("دوره با موفقیت به کتابخانه شما اضافه شد!", 'success');
-        setIsPurchased(true); // بلافاصله دکمه را به حالت "خریداری شده" تغییر می‌دهیم
+        setIsPurchased(true);
       } else {
         showToast(data.message, 'error');
       }
@@ -123,6 +125,9 @@ export default function ProductDetails() {
   };
 
   const handleAddToCart = () => {
+    // Failsafe to prevent adding if it's already in the cart
+    if (inCart) return;
+
     addToCart({
       id: product.id,
       title: product.title,
@@ -149,7 +154,6 @@ export default function ProductDetails() {
       
       if (res.ok) {
         showToast('نظر شما با موفقیت ثبت شد!', 'success');
-        // رفرش کردن کامنت‌ها
         const reviewsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${id}/reviews`);
         if (reviewsRes.ok) setReviews(await reviewsRes.json());
         setNewComment('');
@@ -165,6 +169,8 @@ export default function ProductDetails() {
   if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500">در حال دریافت اطلاعات...</div>;
   if (!product) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500">محصول یافت نشد.</div>;
 
+  const buyerLabel = product.category === 'Course' ? 'دانشجو' : 'خریدار';
+
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-[#0f0e1a]" style={{ direction: 'rtl' }}>
       <Navbar />
@@ -176,17 +182,38 @@ export default function ProductDetails() {
         {toast.message}
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 sm:gap-10">
           
-          {/* بخش جزئیات محصول */}
+          {/* Product Info Column */}
           <div className="flex-1 space-y-6">
             <div>
               <span className="text-[10px] font-black bg-purple-100 text-purple-700 px-3 py-1 rounded-full mb-3 inline-block shadow-sm">
                 {product.category === 'Course' ? '📚 دوره آموزشی' : product.category === 'Book' ? '📄 کتاب و جزوه' : '🔑 لایسنس نرم‌افزار'}
               </span>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">{product.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">{product.title}</h1>
               <p className="text-sm font-bold text-gray-500 mt-2">فروشنده: {product.seller?.fullName || 'کاربر سیستم'}</p>
+              
+              {/* Stats: Rating & Buyers Count */}
+              <div className="flex flex-wrap items-center gap-3 mt-4">
+                <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-100 px-3 py-2 rounded-xl">
+                  <span className="text-amber-500 text-sm">⭐</span>
+                  <span className="text-sm font-black text-gray-900">
+                    {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
+                  </span>
+                  <span className="text-[11px] font-bold text-gray-500">
+                    ({product.reviewCount || 0} امتیاز)
+                  </span>
+                </div>
+                
+                <div className="inline-flex items-center gap-1.5 bg-purple-50 border border-purple-100 px-3 py-2 rounded-xl">
+                  <span className="text-purple-500 text-sm">👥</span>
+                  <span className="text-sm font-black text-gray-900">
+                    {product.purchaseCount ? product.purchaseCount.toLocaleString('fa-IR') : 0}
+                  </span>
+                  <span className="text-[11px] font-bold text-gray-500">{buyerLabel}</span>
+                </div>
+              </div>
             </div>
             
             <div className="prose prose-sm text-gray-600 leading-relaxed font-medium bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
@@ -194,7 +221,7 @@ export default function ProductDetails() {
             </div>
           </div>
 
-          {/* باکس پرداخت / دسترسی */}
+          {/* Purchase / Access Box */}
           <div className="w-full md:w-80 shrink-0">
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 sticky top-24">
               <div className="mb-6 pb-6 border-b border-gray-200">
@@ -205,7 +232,6 @@ export default function ProductDetails() {
               </div>
 
               {isPurchased ? (
-                // اگر کاربر محصول رو خریده باشه
                 <div className="space-y-3">
                   <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-center">
                     <span className="text-xs font-black text-emerald-700">✅ شما این محصول را خریده‌اید</span>
@@ -218,7 +244,6 @@ export default function ProductDetails() {
                   </Link>
                 </div>
               ) : (
-                // اگر کاربر محصول رو نخریده باشه
                 <>
                   {product.allowSubscription ? (
                     hasSubscription ? (
@@ -238,9 +263,14 @@ export default function ProductDetails() {
                       <div className="space-y-4">
                         <button 
                           onClick={handleAddToCart}
-                          className="w-full py-3.5 bg-gray-900 hover:bg-black text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                          disabled={inCart}
+                          className={`w-full py-3.5 text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer ${
+                            inCart 
+                              ? 'bg-amber-100 text-amber-700 cursor-not-allowed border border-amber-200' 
+                              : 'bg-gray-900 hover:bg-black text-white'
+                          }`}
                         >
-                          🛒 افزودن به سبد خرید
+                          {inCart ? 'در سبد خرید موجود است' : '🛒 افزودن به سبد خرید'}
                         </button>
                         <div className="p-3 bg-purple-50 border border-purple-100 rounded-xl text-center">
                           <p className="text-[10px] font-bold text-purple-700 leading-relaxed">
@@ -252,9 +282,14 @@ export default function ProductDetails() {
                   ) : (
                     <button 
                       onClick={handleAddToCart}
-                      className="w-full py-3.5 bg-gray-900 hover:bg-black text-white text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                      disabled={inCart}
+                      className={`w-full py-3.5 text-sm font-black rounded-xl transition-all shadow-md active:scale-95 cursor-pointer ${
+                        inCart 
+                          ? 'bg-amber-100 text-amber-700 cursor-not-allowed border border-amber-200' 
+                          : 'bg-gray-900 hover:bg-black text-white'
+                      }`}
                     >
-                      🛒 افزودن به سبد خرید
+                      {inCart ? 'در سبد خرید موجود است' : '🛒 افزودن به سبد خرید'}
                     </button>
                   )}
                 </>
@@ -263,14 +298,14 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        {/* بخش نظرات کاربران */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mt-8">
+        {/* Reviews Section */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 mt-8">
           <div className="flex items-center gap-3 mb-8">
             <span className="text-2xl">💬</span>
             <h3 className="text-xl font-black text-gray-900">نظرات و بازخوردهای کاربران</h3>
           </div>
 
-          {/* فرم ثبت نظر (فقط برای خریداران) */}
+          {/* Review Form (Verified Buyers Only) */}
           {isPurchased ? (
             <form onSubmit={handleReviewSubmit} className="mb-10 bg-gray-50/50 p-6 rounded-2xl border border-gray-200">
               <h4 className="text-sm font-black text-[#6d28d9] mb-4">ثبت دیدگاه جدید</h4>
@@ -312,7 +347,7 @@ export default function ProductDetails() {
             </div>
           )}
 
-          {/* لیست نظرات */}
+          {/* Reviews List */}
           <div className="space-y-4">
             {reviews.length > 0 ? reviews.map(r => (
               <div key={r.id} className="p-5 bg-white border border-gray-100 rounded-2xl flex flex-col gap-3 shadow-sm hover:border-purple-100 transition-colors">
@@ -338,7 +373,7 @@ export default function ProductDetails() {
       </div>
 
       {!recLoading && productRecommendations.length > 0 && (
-        <div className="max-w-5xl mx-auto px-6 pb-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
           <RecommendationSection
             title="خریداران این محصول، این‌ها را هم خریدند"
             subtitle="پیشنهادات هوشمند بر اساس سلیقه کاربران مشابه"
