@@ -2,11 +2,16 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { CartContext } from '../context/CartContext';
+import RecommendationSection from '../components/RecommendationSection';
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
+
+  // for recommendation system
+  const [productRecommendations, setProductRecommendations] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
   
   const [product, setProduct] = useState(null);
   const [hasSubscription, setHasSubscription] = useState(false);
@@ -42,6 +47,22 @@ export default function ProductDetails() {
 
     fetchProductAndUserStatus();
     // رفع باگ: ریکوئست تکراری checkSubscriptionStatus حذف شد
+  }, [id]);
+
+  useEffect(() => {
+    const fetchProductRecommendations = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/recommendations/product/${id}`);
+        if (res.ok) {
+          setProductRecommendations(await res.json());
+        }
+      } catch (error) {
+        console.error("Error fetching product recommendations:", error);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    fetchProductRecommendations();
   }, [id]);
 
   const handleClaimWithSubscription = async () => {
@@ -173,6 +194,17 @@ export default function ProductDetails() {
 
         </div>
       </div>
+      {/* Product Recommendations Section */}
+      {!recLoading && productRecommendations.length > 0 && (
+        <div className="max-w-5xl mx-auto px-6 pb-12">
+          <RecommendationSection
+            title="خریداران این محصول، این‌ها را هم خریدند"
+            subtitle="پیشنهادات هوشمند بر اساس سلیقه کاربران مشابه"
+            products={productRecommendations}
+            icon="🛒"
+          />
+        </div>
+      )}
     </div>
   );
 }
